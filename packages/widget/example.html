@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StorySlip Widget Example</title>
+    <meta name="storyslip:content-id" content="example-content-123">
+</head>
+<body>
+    <h1>StorySlip Widget Example</h1>
+    <p>This page demonstrates the StorySlip widget with analytics tracking.</p>
+    
+    <div id="storyslip-widget-container"></div>
+    
+    <button onclick="trackCustomEvent()">Track Custom Event</button>
+    
+    <script src="dist/storyslip-widget.js"></script>
+    <script>
+        // Initialize StorySlip with analytics tracking
+        StorySlip.init({
+            apiKey: 'test_api_key_123',
+            domain: 'example.com',
+            apiUrl: 'http://localhost:3000', // Point to local API for testing
+            theme: 'light',
+            displayMode: 'inline',
+            disableTracking: false,
+            disableCookies: false,
+        }, 'storyslip-widget-container');
+        
+        // Function to track custom events
+        function trackCustomEvent() {
+            StorySlip.trackEvent('interaction', 'button_click', {
+                buttonText: 'Track Custom Event',
+                timestamp: new Date().toISOString(),
+            });
+            alert('Custom event tracked!');
+        }
+        
+        // Track page view manually (optional - already done automatically)
+        // StorySlip.trackPageView({
+        //     contentId: 'example-content-123'
+        // });
+    </script>
+</body>
+</html>

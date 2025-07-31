@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storyslip-dashboard
+  namespace: storyslip-production
+  labels:
+    app: storyslip-dashboard
+    component: frontend
+    environment: production
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: storyslip-dashboard
+  template:
+    metadata:
+      labels:
+        app: storyslip-dashboard
+        component: frontend
+        environment: production
+    spec:
+      containers:
+      - name: dashboard
+        image: IMAGE_TAG_DASHBOARD
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 101
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+          readOnly: true
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: var-cache-nginx
+          mountPath: /var/cache/nginx
+        - name: var-run
+          mountPath: /var/run
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+      - name: tmp-volume
+        emptyDir: {}
+      - name: var-cache-nginx
+        emptyDir: {}
+      - name: var-run
+        emptyDir: {}
+      securityContext:
+        fsGroup: 101
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storyslip-dashboard-service
+  namespace: storyslip-production
+  labels:
+    app: storyslip-dashboard
+    component: frontend
+spec:
+  selector:
+    app: storyslip-dashboard
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: storyslip-dashboard-hpa
+  namespace: storyslip-production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: storyslip-dashboard
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

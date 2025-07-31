@@ -1,0 +1,249 @@
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: storyslip-api-monitor
+  namespace: storyslip-production
+  labels:
+    app: storyslip-api
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: storyslip-api
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: storyslip-dashboard-monitor
+  namespace: storyslip-production
+  labels:
+    app: storyslip-dashboard
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: storyslip-dashboard
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: storyslip-widget-monitor
+  namespace: storyslip-production
+  labels:
+    app: storyslip-widget
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: storyslip-widget
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+# Grafana Dashboard ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storyslip-dashboard-config
+  namespace: storyslip-production
+  labels:
+    grafana_dashboard: "1"
+data:
+  storyslip-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "StorySlip CMS Monitoring",
+        "tags": ["storyslip", "cms"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "API Response Time",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"storyslip-api\"}[5m]))",
+                "legendFormat": "95th percentile"
+              },
+              {
+                "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"storyslip-api\"}[5m]))",
+                "legendFormat": "50th percentile"
+              }
+            ],
+            "yAxes": [
+              {
+                "label": "Response Time (seconds)",
+                "min": 0
+              }
+            ],
+            "xAxis": {
+              "show": true
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "id": 2,
+            "title": "Request Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{job=\"storyslip-api\"}[5m])",
+                "legendFormat": "{{method}} {{status}}"
+              }
+            ],
+            "yAxes": [
+              {
+                "label": "Requests per second",
+                "min": 0
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 0
+            }
+          },
+          {
+            "id": 3,
+            "title": "Error Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{job=\"storyslip-api\",status=~\"5..\"}[5m])",
+                "legendFormat": "5xx errors"
+              },
+              {
+                "expr": "rate(http_requests_total{job=\"storyslip-api\",status=~\"4..\"}[5m])",
+                "legendFormat": "4xx errors"
+              }
+            ],
+            "yAxes": [
+              {
+                "label": "Errors per second",
+                "min": 0
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 8
+            }
+          },
+          {
+            "id": 4,
+            "title": "Database Connections",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "pg_stat_database_numbackends{datname=\"storyslip_production\"}",
+                "legendFormat": "Active connections"
+              }
+            ],
+            "yAxes": [
+              {
+                "label": "Connections",
+                "min": 0
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 8
+            }
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+
+---
+# Alerting Rules
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: storyslip-alerts
+  namespace: storyslip-production
+  labels:
+    app: storyslip
+    release: prometheus
+spec:
+  groups:
+  - name: storyslip.rules
+    rules:
+    - alert: StorySlipAPIDown
+      expr: up{job="storyslip-api"} == 0
+      for: 1m
+      labels:
+        severity: critical
+        service: api
+      annotations:
+        summary: "StorySlip API is down"
+        description: "StorySlip API has been down for more than 1 minute"
+    
+    - alert: StorySlipHighErrorRate
+      expr: rate(http_requests_total{job="storyslip-api",status=~"5.."}[5m]) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+        service: api
+      annotations:
+        summary: "High error rate on StorySlip API"
+        description: "Error rate is {{ $value }} errors per second"
+    
+    - alert: StorySlipHighResponseTime
+      expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="storyslip-api"}[5m])) > 2
+      for: 5m
+      labels:
+        severity: warning
+        service: api
+      annotations:
+        summary: "High response time on StorySlip API"
+        description: "95th percentile response time is {{ $value }} seconds"
+    
+    - alert: StorySlipDatabaseConnections
+      expr: pg_stat_database_numbackends{datname="storyslip_production"} > 80
+      for: 5m
+      labels:
+        severity: warning
+        service: database
+      annotations:
+        summary: "High database connection count"
+        description: "Database has {{ $value }} active connections"
+    
+    - alert: StorySlipPodCrashLooping
+      expr: rate(kube_pod_container_status_restarts_total{namespace="storyslip-production"}[15m]) > 0
+      for: 5m
+      labels:
+        severity: warning
+        service: kubernetes
+      annotations:
+        summary: "Pod is crash looping"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is crash looping"

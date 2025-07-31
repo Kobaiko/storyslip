@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storyslip-production
+  labels:
+    name: storyslip-production
+    environment: production
+    app: storyslip
