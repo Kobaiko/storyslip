@@ -49,6 +49,117 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API health check endpoint
+app.get('/api/monitoring/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'storyslip-api',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    checks: {
+      database: 'healthy',
+      redis: 'healthy',
+      external_apis: 'healthy'
+    }
+  });
+});
+
+// Demo API endpoints for showcase
+app.get('/api/content', (req, res) => {
+  res.json({
+    data: [
+      {
+        id: 'demo-post-1',
+        title: 'Welcome to StorySlip',
+        content: 'This is a demo blog post showcasing the content management features.',
+        status: 'published',
+        author: 'Demo Admin',
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'demo-post-2',
+        title: 'AI-Powered Content Creation',
+        content: 'Learn how StorySlip uses AI to help you create amazing content.',
+        status: 'published',
+        author: 'Demo Admin',
+        created_at: new Date().toISOString()
+      }
+    ],
+    total: 2,
+    page: 1,
+    limit: 10
+  });
+});
+
+app.get('/api/widgets', (req, res) => {
+  res.json({
+    data: [
+      {
+        id: 'demo-widget-1',
+        name: 'Blog Feed',
+        type: 'blog-feed',
+        theme: 'modern',
+        config: { limit: 5 },
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'demo-widget-2',
+        name: 'Content Showcase',
+        type: 'content-grid',
+        theme: 'minimal',
+        config: { columns: 3 },
+        created_at: new Date().toISOString()
+      }
+    ],
+    total: 2
+  });
+});
+
+app.get('/api/analytics/overview', (req, res) => {
+  res.json({
+    views: 12543,
+    visitors: 8921,
+    bounce_rate: 0.32,
+    avg_session_duration: 245,
+    top_content: [
+      { title: 'Welcome to StorySlip', views: 3421 },
+      { title: 'AI-Powered Content', views: 2876 }
+    ],
+    traffic_sources: {
+      direct: 45,
+      search: 32,
+      social: 15,
+      referral: 8
+    }
+  });
+});
+
+app.get('/api/team/members', (req, res) => {
+  res.json({
+    data: [
+      {
+        id: 'demo-admin',
+        name: 'Demo Admin',
+        email: 'admin@storyslip.com',
+        role: 'admin',
+        status: 'active',
+        last_active: new Date().toISOString()
+      },
+      {
+        id: 'demo-user',
+        name: 'Demo User',
+        email: 'user@storyslip.com',
+        role: 'user',
+        status: 'active',
+        last_active: new Date().toISOString()
+      }
+    ],
+    total: 2
+  });
+});
+
 // API documentation endpoint
 app.get('/api/docs', (req, res) => {
   res.json({

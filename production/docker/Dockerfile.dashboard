@@ -1,0 +1,69 @@
+# StorySlip Dashboard Production Dockerfile
+# Multi-stage build for optimized production image
+
+# Build stage
+FROM node:18-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++
+
+# Copy package files
+COPY package*.json ./
+COPY packages/dashboard/package*.json ./packages/dashboard/
+
+# Install dependencies
+RUN npm ci --ignore-scripts
+
+# Copy source code
+COPY packages/dashboard ./packages/dashboard
+COPY tsconfig.json ./
+
+# Build the application
+WORKDIR /app/packages/dashboard
+RUN npm run build
+
+# Production stage
+FROM nginx:alpine AS production
+
+# Install additional packages
+RUN apk add --no-cache \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Copy built application
+COPY --from=builder /app/packages/dashboard/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY production/docker/nginx/dashboard.conf /etc/nginx/conf.d/default.conf
+
+# Copy custom nginx.conf
+COPY production/docker/nginx/nginx.conf /etc/nginx/nginx.conf
+
+# Create nginx user and set permissions
+RUN addgroup -g 1001 -S nginx-custom
+RUN adduser -S nginx-custom -u 1001 -G nginx-custom
+RUN chown -R nginx-custom:nginx-custom /usr/share/nginx/html
+RUN chown -R nginx-custom:nginx-custom /var/cache/nginx
+RUN chown -R nginx-custom:nginx-custom /var/log/nginx
+RUN chown -R nginx-custom:nginx-custom /etc/nginx/conf.d
+RUN touch /var/run/nginx.pid
+RUN chown -R nginx-custom:nginx-custom /var/run/nginx.pid
+
+# Set environment variables
+ENV NODE_ENV=production
+
+# Expose port
+EXPOSE 3000
+
+# Switch to non-root user
+USER nginx-custom
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

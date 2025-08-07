@@ -77,16 +77,41 @@ export function HeroSection() {
             <span>Trusted by 50,000+ websites</span>
           </motion.div>
 
-          {/* Main Headline - Single header without subheader */}
+          {/* Main Headline */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black font-lato leading-tight text-gray-900 dark:text-white mb-16 max-w-5xl mx-auto"
+            className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black font-lato leading-tight text-gray-900 dark:text-white mb-8 max-w-5xl mx-auto"
           >
             The CMS for the<br />
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Vibe-Coding Era</span>
           </motion.h1>
+
+          {/* Subheader */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="text-xl sm:text-2xl lg:text-3xl font-medium text-gray-600 dark:text-gray-300 mb-16 max-w-4xl mx-auto leading-relaxed"
+          >
+            <div className="mb-2">
+              Drop one snippet, unlock a full-stack CMS -
+            </div>
+            <motion.div
+              animate={{
+                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent bg-[length:200%_100%] font-semibold"
+            >
+              no servers, no sweat.
+            </motion.div>
+          </motion.div>
 
 
 

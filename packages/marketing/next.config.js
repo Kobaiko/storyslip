@@ -15,7 +15,22 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/(.*)',
+        // Allow iframe embedding for blog API routes
+        source: '/api/blog-iframe/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+        ],
+      },
+      {
+        // Deny iframe embedding for all other routes
+        source: '/((?!api/blog-iframe).*)',
         headers: [
           {
             key: 'X-Frame-Options',

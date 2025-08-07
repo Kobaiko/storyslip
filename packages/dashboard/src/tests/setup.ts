@@ -203,10 +203,10 @@ jest.mock('chart.js', () => ({
 }));
 
 jest.mock('react-chartjs-2', () => ({
-  Bar: jest.fn(() => <div data-testid="bar-chart" />),
-  Line: jest.fn(() => <div data-testid="line-chart" />),
-  Pie: jest.fn(() => <div data-testid="pie-chart" />),
-  Doughnut: jest.fn(() => <div data-testid="doughnut-chart" />),
+  Bar: jest.fn(() => 'MockBarChart'),
+  Line: jest.fn(() => 'MockLineChart'),
+  Pie: jest.fn(() => 'MockPieChart'),
+  Doughnut: jest.fn(() => 'MockDoughnutChart'),
 }));
 
 // Mock rich text editor
@@ -221,31 +221,17 @@ jest.mock('@tiptap/react', () => ({
     isActive: jest.fn(() => false),
     can: jest.fn(() => ({ toggleBold: jest.fn(() => true) })),
   })),
-  EditorContent: jest.fn(({ editor }) => <div data-testid="editor-content" />),
+  EditorContent: jest.fn(() => 'MockEditorContent'),
 }));
 
 // Mock date picker
 jest.mock('react-datepicker', () => {
-  return jest.fn(({ onChange, selected, ...props }) => (
-    <input
-      data-testid="date-picker"
-      value={selected ? selected.toISOString().split('T')[0] : ''}
-      onChange={(e) => onChange && onChange(new Date(e.target.value))}
-      {...props}
-    />
-  ));
+  return jest.fn(() => 'MockDatePicker');
 });
 
 // Mock color picker
 jest.mock('react-color', () => ({
-  SketchPicker: jest.fn(({ color, onChange }) => (
-    <input
-      data-testid="color-picker"
-      type="color"
-      value={color}
-      onChange={(e) => onChange && onChange({ hex: e.target.value })}
-    />
-  )),
+  SketchPicker: jest.fn(() => 'MockColorPicker'),
 }));
 
 // Cleanup after each test

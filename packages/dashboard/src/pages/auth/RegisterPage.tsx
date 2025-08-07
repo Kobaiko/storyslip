@@ -4,11 +4,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
-import { Logo } from '../../components/ui/Logo';
+import { PasswordStrengthIndicator } from '../../components/auth/PasswordStrengthIndicator';
+import { SplitScreenAuthLayout } from '../../components/auth/SplitScreenAuthLayout';
+import { ProductPreview } from '../../components/auth/ProductPreview';
+import { AuthPanel } from '../../components/auth/AuthPanel';
 import { urls } from '../../config/app';
 
 const registerSchema = z.object({
@@ -28,22 +30,27 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
 
+  const password = watch('password', '');
+
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
       await registerUser(data.email, data.password, data.name);
-      navigate('/', { replace: true });
+      setSuccess('Registration successful! Please check your email to verify your account before signing in.');
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -52,10 +59,13 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <SplitScreenAuthLayout preview={<ProductPreview />}>
+      <AuthPanel 
+        title="Create your account"
+        subtitle="Start managing your embeddable content today"
+      >
         {/* Back to marketing link */}
-        <div className="text-center">
+        <div className="mb-6">
           <a
             href={urls.marketing}
             className="inline-flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
@@ -65,125 +75,128 @@ const RegisterPage: React.FC = () => {
           </a>
         </div>
 
-        {/* Logo and title */}
-        <div className="text-center">
-          <div className="mx-auto">
-            <Logo size="xl" />
+        {/* Status Messages */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            {error}
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Start managing your embeddable content today
-          </p>
-        </div>
+        )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Get started</CardTitle>
-            <CardDescription>
-              Create your StorySlip account to get started
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+            {success}
+          </div>
+        )}
 
-              <Input
-                label="Full name"
-                type="text"
-                autoComplete="name"
-                fullWidth
-                {...register('name')}
-                error={errors.name?.message}
-              />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Account Information */}
+          <div className="space-y-4">
+            <Input
+              label="Full name"
+              type="text"
+              autoComplete="name"
+              size="md"
+              placeholder="Enter your full name"
+              {...register('name')}
+              error={errors.name?.message}
+            />
 
-              <Input
-                label="Email address"
-                type="email"
-                autoComplete="email"
-                fullWidth
-                {...register('email')}
-                error={errors.email?.message}
-              />
+            <Input
+              label="Email address"
+              type="email"
+              autoComplete="email"
+              size="md"
+              placeholder="Enter your email address"
+              {...register('email')}
+              error={errors.email?.message}
+            />
+          </div>
 
+          {/* Password Section */}
+          <div className="space-y-4">
+            <div>
               <Input
                 label="Password"
                 type="password"
                 autoComplete="new-password"
-                fullWidth
+                size="md"
+                placeholder="Create a strong password"
                 {...register('password')}
                 error={errors.password?.message}
-                helperText="Must be at least 8 characters"
               />
-
-              <Input
-                label="Confirm password"
-                type="password"
-                autoComplete="new-password"
-                fullWidth
-                {...register('confirmPassword')}
-                error={errors.confirmPassword?.message}
-              />
-
-              <div className="flex items-center">
-                <input
-                  id="agree-terms"
-                  name="agree-terms"
-                  type="checkbox"
-                  required
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="agree-terms" className="ml-2 block text-sm text-gray-900">
-                  I agree to the{' '}
-                  <Link to="/terms" className="text-blue-600 hover:text-blue-500">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link to="/privacy" className="text-blue-600 hover:text-blue-500">
-                    Privacy Policy
-                  </Link>
-                </label>
-              </div>
-
-              <Button
-                type="submit"
-                fullWidth
-                loading={isLoading}
-                disabled={isLoading}
-              >
-                Create account
-              </Button>
-            </form>
-
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
+              {password && (
+                <div className="mt-2">
+                  <PasswordStrengthIndicator password={password} />
                 </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Already have an account?</span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <Link
-                  to="/login"
-                  className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Sign in instead
-                </Link>
-              </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+
+            <Input
+              label="Confirm password"
+              type="password"
+              autoComplete="new-password"
+              size="md"
+              placeholder="Confirm your password"
+              {...register('confirmPassword')}
+              error={errors.confirmPassword?.message}
+            />
+          </div>
+
+          {/* Terms Agreement */}
+          <div className="flex items-start space-x-3">
+            <input
+              id="agree-terms"
+              name="agree-terms"
+              type="checkbox"
+              required
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+            />
+            <label htmlFor="agree-terms" className="text-sm text-gray-700 leading-relaxed">
+              I agree to the{' '}
+              <Link to="/terms" className="text-blue-600 hover:text-blue-500 underline">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link to="/privacy" className="text-blue-600 hover:text-blue-500 underline">
+                Privacy Policy
+              </Link>
+            </label>
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            fullWidth
+            size="lg"
+            loading={isLoading}
+            disabled={isLoading}
+          >
+            Create account
+          </Button>
+        </form>
+
+        {/* Sign In Link */}
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Already have an account?</span>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <Link
+              to="/login"
+              className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              Sign in instead
+            </Link>
+          </div>
+        </div>
+      </AuthPanel>
+    </SplitScreenAuthLayout>
   );
 };
 

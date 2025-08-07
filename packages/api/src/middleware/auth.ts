@@ -1,61 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../services/auth';
-
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-    role: string;
-  };
-}
+import { SupabaseAuthService, AuthenticatedRequest } from '../services/supabase-auth.service';
+import DatabaseService from '../services/database';
 
 /**
- * Middleware to authenticate JWT tokens
+ * Middleware to authenticate JWT tokens using Supabase
  */
-export const authenticateToken = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-
-    if (!token) {
-      res.status(401).json({
-        success: false,
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'Access token required',
-        },
-      });
-      return;
-    }
-
-    const decoded = AuthService.verifyToken(token);
-    req.user = {
-      userId: decoded.userId,
-      email: decoded.email,
-      role: decoded.role,
-    };
-
-    next();
-  } catch (error) {
-    res.status(401).json({
-      success: false,
-      error: {
-        code: 'INVALID_TOKEN',
-        message: 'Invalid or expired token',
-      },
-    });
-  }
-};
+export const authenticateToken = SupabaseAuthService.verifyToken;
 
 /**
  * Middleware to check if user has required role
  */
 export const requireRole = (roles: string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     if (!req.user) {
       res.status(401).json({
         success: false,
@@ -67,18 +23,44 @@ export const requireRole = (roles: string[]) => {
       return;
     }
 
-    if (!roles.includes(req.user.role)) {
-      res.status(403).json({
+    // Get user role from database
+    try {
+      const userProfile = await DatabaseService.getCurrentUserProfile(req.user.id);
+      
+      if (userProfile.error || !userProfile.data) {
+        res.status(401).json({
+          success: false,
+          error: {
+            code: 'USER_NOT_FOUND',
+            message: 'User profile not found',
+          },
+        });
+        return;
+      }
+
+      const userRole = userProfile.data.role;
+      
+      if (!roles.includes(userRole)) {
+        res.status(403).json({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Insufficient permissions',
+          },
+        });
+        return;
+      }
+
+      next();
+    } catch (error) {
+      res.status(500).json({
         success: false,
         error: {
-          code: 'FORBIDDEN',
-          message: 'Insufficient permissions',
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to verify user permissions',
         },
       });
-      return;
     }
-
-    next();
   };
 };
 
@@ -92,15 +74,14 @@ export const optionalAuth = async (
 ): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
     if (token) {
-      const decoded = AuthService.verifyToken(token);
-      req.user = {
-        userId: decoded.userId,
-        email: decoded.email,
-        role: decoded.role,
-      };
+      const result = await SupabaseAuthService.getCurrentUser(token);
+      if (!result.error && result.user) {
+        req.user = result.user;
+        req.userId = result.user.id;
+      }
     }
 
     next();

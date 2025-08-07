@@ -18,7 +18,10 @@ import {
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { Form, FormField, FormActions, Input, Textarea, Select, Checkbox } from '../ui/Form';
+import { Input } from '../ui/Input';
+import { Form, FormField, FormActions, Textarea, Select, Checkbox } from '../ui/Form';
+import { FormContainer } from '../ui/FormContainer';
+import { FormFieldGroup, ContentMetadataFieldGroup, SEOFieldGroup } from '../ui/FormFieldGroup';
 import { Badge } from '../ui/Badge';
 import { Modal, useModal } from '../ui/Modal';
 import { useToast } from '../ui/Toast';
@@ -172,9 +175,9 @@ export function ContentForm({
   ];
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <FormContainer maxWidth="full" centered={false}>
       <Form onSubmit={form.handleSubmit(handleSubmit)}>
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content Area */}
           <div className="lg:col-span-3 space-y-6">
             {/* Header */}
@@ -201,6 +204,7 @@ export function ContentForm({
                     variant="outline"
                     onClick={handleSaveDraft}
                     leftIcon={<Save className="h-4 w-4" />}
+                    size="lg"
                   >
                     Save Draft
                   </Button>
@@ -211,43 +215,55 @@ export function ContentForm({
                   variant="outline"
                   onClick={handlePreview}
                   leftIcon={<Eye className="h-4 w-4" />}
+                  size="lg"
                 >
                   Preview
                 </Button>
               </div>
             </div>
 
-            {/* Title and Slug */}
+            {/* Content Metadata */}
             <Card>
-              <CardContent className="p-6 space-y-4">
-                <FormField>
+              <CardContent className="p-6">
+                <ContentMetadataFieldGroup>
                   <Input
                     label="Title"
                     placeholder="Enter content title..."
-                    {...form.register('title')}
+                    value={form.watch('title')}
+                    onChange={(e) => form.setValue('title', e.target.value)}
                     error={form.formState.errors.title?.message}
                   />
-                </FormField>
 
-                <FormField>
                   <Input
                     label="Slug"
                     placeholder="content-slug"
-                    {...form.register('slug')}
+                    value={form.watch('slug')}
+                    onChange={(e) => form.setValue('slug', e.target.value)}
                     error={form.formState.errors.slug?.message}
                     helperText="URL-friendly version of the title"
                   />
-                </FormField>
 
-                <FormField>
-                  <Textarea
-                    label="Excerpt (Optional)"
-                    placeholder="Brief description of the content..."
-                    {...form.register('excerpt')}
-                    error={form.formState.errors.excerpt?.message}
-                    rows={3}
-                  />
-                </FormField>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-2">
+                      Excerpt (Optional)
+                    </label>
+                    <textarea
+                      id="excerpt"
+                      rows={3}
+                      value={form.watch('excerpt') || ''}
+                      onChange={(e) => form.setValue('excerpt', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 transition-all duration-200
+                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                        disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed disabled:opacity-60"
+                      placeholder="Brief description of the content..."
+                    />
+                    {form.formState.errors.excerpt && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {form.formState.errors.excerpt.message}
+                      </p>
+                    )}
+                  </div>
+                </ContentMetadataFieldGroup>
               </CardContent>
             </Card>
 
@@ -274,43 +290,50 @@ export function ContentForm({
 
             {/* SEO Section */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Globe className="h-5 w-5 mr-2" />
-                  SEO Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField>
+              <CardContent className="p-6">
+                <SEOFieldGroup>
                   <Input
                     label="SEO Title"
                     placeholder="Optimized title for search engines..."
-                    {...form.register('seo_title')}
+                    value={form.watch('seo_title') || ''}
+                    onChange={(e) => form.setValue('seo_title', e.target.value)}
                     error={form.formState.errors.seo_title?.message}
                     helperText={`${form.watch('seo_title')?.length || 0}/60 characters`}
                   />
-                </FormField>
 
-                <FormField>
-                  <Textarea
-                    label="SEO Description"
-                    placeholder="Brief description for search results..."
-                    {...form.register('seo_description')}
-                    error={form.formState.errors.seo_description?.message}
-                    helperText={`${form.watch('seo_description')?.length || 0}/160 characters`}
-                    rows={3}
-                  />
-                </FormField>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="seo_description" className="block text-sm font-medium text-gray-700 mb-2">
+                      SEO Description
+                    </label>
+                    <textarea
+                      id="seo_description"
+                      rows={3}
+                      value={form.watch('seo_description') || ''}
+                      onChange={(e) => form.setValue('seo_description', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 transition-all duration-200
+                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                        disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed disabled:opacity-60"
+                      placeholder="Brief description for search results..."
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      {form.watch('seo_description')?.length || 0}/160 characters
+                    </p>
+                    {form.formState.errors.seo_description && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {form.formState.errors.seo_description.message}
+                      </p>
+                    )}
+                  </div>
 
-                <FormField>
                   <Input
                     label="SEO Keywords"
                     placeholder="keyword1, keyword2, keyword3"
-                    {...form.register('seo_keywords')}
+                    value={form.watch('seo_keywords') || ''}
+                    onChange={(e) => form.setValue('seo_keywords', e.target.value)}
                     error={form.formState.errors.seo_keywords?.message}
                     helperText="Comma-separated keywords"
                   />
-                </FormField>
+                </SEOFieldGroup>
               </CardContent>
             </Card>
           </div>
@@ -325,44 +348,49 @@ export function ContentForm({
                   Publish
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField>
-                  <Select
-                    label="Status"
-                    value={form.watch('status')}
-                    onChange={(e) => form.setValue('status', e.target.value as any)}
-                    options={[
-                      { value: 'draft', label: 'Draft' },
-                      { value: 'review', label: 'Under Review' },
-                      { value: 'published', label: 'Published' },
-                      { value: 'scheduled', label: 'Scheduled' },
-                    ]}
-                  />
-                </FormField>
+              <CardContent>
+                <FormFieldGroup layout="single" spacing="normal">
+                  <div>
+                    <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+                      Status
+                    </label>
+                    <select
+                      id="status"
+                      value={form.watch('status')}
+                      onChange={(e) => form.setValue('status', e.target.value as any)}
+                      className="w-full h-11 px-4 py-3 text-base border border-gray-300 bg-white rounded-lg shadow-sm transition-all duration-200
+                        hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                        sm:h-12 sm:px-4 sm:py-3"
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="review">Under Review</option>
+                      <option value="published">Published</option>
+                      <option value="scheduled">Scheduled</option>
+                    </select>
+                  </div>
 
-                {watchedStatus === 'scheduled' && (
-                  <FormField>
+                  {watchedStatus === 'scheduled' && (
                     <Input
                       label="Schedule Date"
                       type="datetime-local"
-                      {...form.register('scheduled_at')}
+                      value={form.watch('scheduled_at') || ''}
+                      onChange={(e) => form.setValue('scheduled_at', e.target.value)}
                       error={form.formState.errors.scheduled_at?.message}
                     />
-                  </FormField>
-                )}
+                  )}
 
-                <FormActions>
                   <Button
                     type="submit"
                     loading={loading}
                     className="w-full"
                     leftIcon={<Send className="h-4 w-4" />}
+                    size="lg"
                   >
                     {watchedStatus === 'published' ? 'Publish' : 
                      watchedStatus === 'scheduled' ? 'Schedule' : 
                      'Save'}
                   </Button>
-                </FormActions>
+                </FormFieldGroup>
               </CardContent>
             </Card>
 
@@ -375,21 +403,24 @@ export function ContentForm({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div className="space-y-3 max-h-48 overflow-y-auto">
                   {categories.map((category) => (
-                    <Checkbox
-                      key={category.id}
-                      label={category.name}
-                      checked={form.watch('category_ids')?.includes(category.id) || false}
-                      onChange={(e) => {
-                        const currentIds = form.watch('category_ids') || [];
-                        if (e.target.checked) {
-                          form.setValue('category_ids', [...currentIds, category.id]);
-                        } else {
-                          form.setValue('category_ids', currentIds.filter(id => id !== category.id));
-                        }
-                      }}
-                    />
+                    <label key={category.id} className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.watch('category_ids')?.includes(category.id) || false}
+                        onChange={(e) => {
+                          const currentIds = form.watch('category_ids') || [];
+                          if (e.target.checked) {
+                            form.setValue('category_ids', [...currentIds, category.id]);
+                          } else {
+                            form.setValue('category_ids', currentIds.filter(id => id !== category.id));
+                          }
+                        }}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{category.name}</span>
+                    </label>
                   ))}
                 </div>
               </CardContent>
@@ -404,21 +435,24 @@ export function ContentForm({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div className="space-y-3 max-h-48 overflow-y-auto">
                   {tags.map((tag) => (
-                    <Checkbox
-                      key={tag.id}
-                      label={tag.name}
-                      checked={form.watch('tag_ids')?.includes(tag.id) || false}
-                      onChange={(e) => {
-                        const currentIds = form.watch('tag_ids') || [];
-                        if (e.target.checked) {
-                          form.setValue('tag_ids', [...currentIds, tag.id]);
-                        } else {
-                          form.setValue('tag_ids', currentIds.filter(id => id !== tag.id));
-                        }
-                      }}
-                    />
+                    <label key={tag.id} className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.watch('tag_ids')?.includes(tag.id) || false}
+                        onChange={(e) => {
+                          const currentIds = form.watch('tag_ids') || [];
+                          if (e.target.checked) {
+                            form.setValue('tag_ids', [...currentIds, tag.id]);
+                          } else {
+                            form.setValue('tag_ids', currentIds.filter(id => id !== tag.id));
+                          }
+                        }}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{tag.name}</span>
+                    </label>
                   ))}
                 </div>
               </CardContent>
@@ -433,28 +467,29 @@ export function ContentForm({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <FormField>
+                <FormFieldGroup layout="single">
                   <Input
                     label="Image URL"
                     type="url"
                     placeholder="https://example.com/image.jpg"
-                    {...form.register('featured_image_url')}
+                    value={form.watch('featured_image_url') || ''}
+                    onChange={(e) => form.setValue('featured_image_url', e.target.value)}
                     error={form.formState.errors.featured_image_url?.message}
                   />
-                </FormField>
-                
-                {form.watch('featured_image_url') && (
-                  <div className="mt-3">
-                    <img
-                      src={form.watch('featured_image_url')}
-                      alt="Featured"
-                      className="w-full h-32 object-cover rounded-lg"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
+                  
+                  {form.watch('featured_image_url') && (
+                    <div className="mt-3">
+                      <img
+                        src={form.watch('featured_image_url')}
+                        alt="Featured"
+                        className="w-full h-32 object-cover rounded-lg"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                </FormFieldGroup>
               </CardContent>
             </Card>
 
@@ -467,17 +502,23 @@ export function ContentForm({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Checkbox
-                  label="Enable auto-save"
-                  checked={autoSaveEnabled}
-                  onChange={(e) => setAutoSaveEnabled(e.target.checked)}
-                  helperText="Automatically save drafts every 30 seconds"
-                />
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoSaveEnabled}
+                    onChange={(e) => setAutoSaveEnabled(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Enable auto-save</span>
+                    <p className="text-xs text-gray-500">Automatically save drafts every 30 seconds</p>
+                  </div>
+                </label>
               </CardContent>
             </Card>
           </div>
         </div>
       </Form>
-    </div>
+    </FormContainer>
   );
 }

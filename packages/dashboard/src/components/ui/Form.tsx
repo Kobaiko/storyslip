@@ -3,15 +3,24 @@ import { cn } from '../../lib/utils';
 import { Input } from './Input';
 import { Button } from './Button';
 import { Switch, SwitchWithLabel } from './Switch';
+import { FormContainer } from './FormContainer';
+import { FormFieldGroup } from './FormFieldGroup';
 
 interface FormFieldProps {
   children: React.ReactNode;
   className?: string;
+  required?: boolean;
+  error?: string;
 }
 
-export function FormField({ children, className }: FormFieldProps) {
+export function FormField({ children, className, required, error }: FormFieldProps) {
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn(
+      'space-y-2',
+      error && 'form-field-error',
+      required && 'form-field-required',
+      className
+    )}>
       {children}
     </div>
   );
@@ -20,41 +29,107 @@ export function FormField({ children, className }: FormFieldProps) {
 interface FormProps extends React.FormHTMLAttributes<HTMLFormElement> {
   children: React.ReactNode;
   onSubmit: (e: React.FormEvent) => void;
+  layout?: 'default' | 'responsive' | 'compact';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  spacing?: 'tight' | 'normal' | 'loose';
+  noValidate?: boolean;
 }
 
-export function Form({ children, onSubmit, className, ...props }: FormProps) {
+export function Form({ 
+  children, 
+  onSubmit, 
+  className, 
+  layout = 'default',
+  maxWidth = 'md',
+  spacing = 'normal',
+  noValidate = true,
+  ...props 
+}: FormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(e);
   };
 
-  return (
+  // Spacing classes
+  const spacingClasses = {
+    tight: 'space-y-4',
+    normal: 'space-y-6',
+    loose: 'space-y-8'
+  };
+
+  // Layout-specific classes
+  const layoutClasses = {
+    default: spacingClasses[spacing],
+    responsive: `${spacingClasses[spacing]} max-w-none`,
+    compact: 'space-y-3'
+  };
+
+  const formContent = (
     <form
       onSubmit={handleSubmit}
-      className={cn('space-y-6', className)}
+      className={cn(
+        'form',
+        layoutClasses[layout],
+        className
+      )}
+      noValidate={noValidate}
       {...props}
     >
       {children}
     </form>
   );
+
+  // Wrap in FormContainer for responsive layouts
+  if (layout === 'responsive') {
+    return (
+      <FormContainer maxWidth={maxWidth} centered={false}>
+        {formContent}
+      </FormContainer>
+    );
+  }
+
+  return formContent;
 }
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
   helperText?: string;
+  size?: 'sm' | 'md' | 'lg';
+  fullWidth?: boolean;
 }
 
 export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, label, error, helperText, id, ...props }, ref) => {
-    const textareaId = id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
+  ({ 
+    className, 
+    label, 
+    error, 
+    helperText, 
+    size = 'md',
+    fullWidth = true,
+    id, 
+    ...props 
+  }, ref) => {
+    const textareaId = id || `textarea-${Math.random().toString(36).substring(2, 11)}`;
+
+    // Size variants
+    const sizeClasses = {
+      sm: 'min-h-[60px] px-3 py-2 text-sm',
+      md: 'min-h-[80px] px-4 py-3 text-base',
+      lg: 'min-h-[120px] px-5 py-4 text-lg'
+    };
+
+    // Width classes
+    const widthClasses = fullWidth 
+      ? 'w-full' 
+      : 'w-full sm:w-auto sm:min-w-[320px] md:min-w-[400px]';
 
     return (
       <div className="space-y-2">
         {label && (
           <label 
             htmlFor={textareaId}
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm font-medium text-gray-700 leading-none"
           >
             {label}
           </label>
@@ -62,18 +137,27 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         <textarea
           id={textareaId}
           className={cn(
-            'flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-            error && 'border-destructive focus-visible:ring-destructive',
+            'flex rounded-lg border border-gray-300 bg-white shadow-sm placeholder-gray-400 transition-all duration-200',
+            'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+            'disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-gray-50',
+            'resize-y',
+            sizeClasses[size],
+            widthClasses,
+            error && 'border-red-300 focus:ring-red-500 focus:border-red-500',
             className
           )}
           ref={ref}
           {...props}
         />
         {error && (
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-red-600 leading-tight" role="alert" aria-live="polite">
+            {error}
+          </p>
         )}
         {helperText && !error && (
-          <p className="text-sm text-muted-foreground">{helperText}</p>
+          <p className="text-sm text-gray-500 leading-tight">
+            {helperText}
+          </p>
         )}
       </div>
     );
@@ -92,7 +176,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, label, error, helperText, options, placeholder, id, ...props }, ref) => {
-    const selectId = id || `select-${Math.random().toString(36).substr(2, 9)}`;
+    const selectId = id || `select-${Math.random().toString(36).substring(2, 11)}`;
 
     return (
       <div className="space-y-2">
@@ -150,7 +234,7 @@ interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
   ({ className, label, error, helperText, id, ...props }, ref) => {
-    const checkboxId = id || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
+    const checkboxId = id || `checkbox-${Math.random().toString(36).substring(2, 11)}`;
 
     return (
       <div className="space-y-2">
@@ -337,6 +421,13 @@ export function useFormValidation<T extends Record<string, any>>(
     isValid: Object.keys(errors).length === 0,
   };
 }
-/
-/ Re-export Switch components
+
+// Re-export Switch components
 export { Switch, SwitchWithLabel };
+
+// Re-export Input component for convenience
+export { Input } from './Input';
+
+// Re-export new layout components
+export { FormContainer, AuthFormContainer, SettingsFormContainer, ContentFormContainer } from './FormContainer';
+export { FormFieldGroup, PersonalInfoFieldGroup, ContactInfoFieldGroup, SecurityFieldGroup, ContentMetadataFieldGroup, SEOFieldGroup } from './FormFieldGroup';

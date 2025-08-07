@@ -2,13 +2,13 @@
 
 export const config = {
   // Dashboard URL - where users go to register/login
-  dashboardUrl: process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3000',
+  dashboardUrl: process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3002',
   
   // API URL - for documentation and API access
   apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
   
   // Marketing site URL
-  marketingUrl: process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3002',
+  marketingUrl: process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3000',
   
   // Contact information
   contact: {

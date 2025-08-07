@@ -11,10 +11,10 @@ export { LoadingSpinner, LoadingState, Skeleton, CardSkeleton, TableSkeleton } f
 
 export { Modal, ConfirmModal, useModal } from './Modal';
 
-export { Table, Pagination } from './Table';
+export { Table, Pagination, TableHeader, TableBody, TableRow, TableHead, TableCell } from './Table';
 
-export { ToastProvider, useToast } from './Toast';
-export type { Toast } from './Toast';
+export { ToastProvider, useToast, ToastComponent as Toast } from './Toast';
+export type { ToastData } from './Toast';
 
 export { Form, FormField, FormActions, Textarea, Select, Checkbox, RadioGroup, useFormValidation } from './Form';
 

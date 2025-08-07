@@ -5,6 +5,13 @@ import { cacheService } from './cache.service';
 import { dbOptimizationService } from './database-optimization.service';
 import { performanceMonitor, performanceMiddleware } from './performance-monitor.service';
 import { createOptimizedAPIMiddleware } from './api-optimization.service';
+import { monitoringService } from './monitoring.service';
+import { 
+  requestTrackingMiddleware, 
+  errorTrackingMiddleware, 
+  securityTrackingMiddleware, 
+  performanceTrackingMiddleware 
+} from '../middleware/error-tracking';
 
 interface IntegrationConfig {
   database: {
@@ -226,6 +233,11 @@ class IntegrationService {
       // Performance monitoring
       this.app.use(performanceMiddleware());
 
+      // Monitoring middleware
+      this.app.use(requestTrackingMiddleware);
+      this.app.use(securityTrackingMiddleware);
+      this.app.use(performanceTrackingMiddleware);
+
       // Request logging
       if (this.config.logging.enableRequestLogging) {
         this.app.use(middleware.logging);
@@ -248,6 +260,9 @@ class IntegrationService {
 
       // Health check
       this.app.use(middleware.healthCheck);
+
+      // Error tracking middleware (before error handling)
+      this.app.use(errorTrackingMiddleware);
 
       // Error handling (should be last)
       this.app.use(middleware.errorHandling);

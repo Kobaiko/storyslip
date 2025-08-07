@@ -1,5 +1,5 @@
 // API client configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 interface ApiResponse<T = any> {
   data: T;
@@ -26,15 +26,12 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     
-    // Get auth token from localStorage
-    const token = localStorage.getItem('auth_token');
-    
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
       },
+      credentials: 'include', // Include cookies for session management
       ...options,
     };
 
@@ -114,13 +111,10 @@ class ApiClient {
         formData.append(key, String(additionalData[key]));
       });
     }
-
-    const token = localStorage.getItem('auth_token');
     
     return this.request<T>(endpoint, {
       method: 'POST',
       headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
         // Don't set Content-Type for FormData, let browser set it with boundary
       },
       body: formData,
@@ -129,6 +123,7 @@ class ApiClient {
 }
 
 export const api = new ApiClient(API_BASE_URL);
+export const apiClient = api; // Alias for backward compatibility
 
 // Convenience methods for common API calls
 export const authApi = {

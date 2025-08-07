@@ -15,25 +15,26 @@ import {
   BookOpen,
   Video,
   MessageCircle,
-  Lightbulb
+  Lightbulb,
+  User
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { Badge } from '../ui/Badge';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOnboarding } from '../../hooks/useOnboarding';
 import { api } from '../../lib/api';
 import { HelpCenter } from '../help/HelpCenter';
 import { GuidedTour } from '../help/ContextualHelp';
 import { QuickHelp } from '../help/ContextualHelp';
 
-interface OnboardingStep {
+interface OnboardingStepComponent {
   id: string;
   title: string;
   description: string;
   icon: React.ComponentType<any>;
   component: React.ComponentType<any>;
-  isCompleted: boolean;
   isOptional?: boolean;
 }
 
@@ -45,103 +46,90 @@ interface OnboardingFlowProps {
 
 export function OnboardingFlow({ isOpen, onClose, onComplete }: OnboardingFlowProps) {
   const { user } = useAuth();
+  const { progress, completeStep, isCompletingStep } = useOnboarding();
   const [currentStep, setCurrentStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
-  const [isLoading, setIsLoading] = useState(false);
   const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [showGuidedTour, setShowGuidedTour] = useState(false);
 
-  const steps: OnboardingStep[] = [
+  const stepComponents: OnboardingStepComponent[] = [
     {
       id: 'welcome',
       title: 'Welcome to StorySlip',
       description: 'Let\'s get you started with your content management journey',
       icon: Zap,
       component: WelcomeStep,
-      isCompleted: false,
     },
     {
-      id: 'create-website',
+      id: 'profile_setup',
+      title: 'Complete Your Profile',
+      description: 'Add your personal information and preferences',
+      icon: User,
+      component: ProfileSetupStep,
+    },
+    {
+      id: 'organization_setup',
+      title: 'Set Up Your Organization',
+      description: 'Configure your organization settings',
+      icon: Users,
+      component: OrganizationSetupStep,
+    },
+    {
+      id: 'create_website',
       title: 'Create Your First Website',
       description: 'Set up your website to start managing content',
       icon: Globe,
       component: CreateWebsiteStep,
-      isCompleted: false,
     },
     {
-      id: 'add-content',
+      id: 'add_content',
       title: 'Add Your First Content',
       description: 'Create and publish your first article or page',
       icon: FileText,
       component: AddContentStep,
-      isCompleted: false,
     },
     {
-      id: 'customize-widget',
+      id: 'customize_widget',
       title: 'Customize Your Widget',
       description: 'Style your content widget to match your brand',
       icon: Palette,
       component: CustomizeWidgetStep,
-      isCompleted: false,
       isOptional: true,
     },
     {
-      id: 'invite-team',
+      id: 'invite_team',
       title: 'Invite Team Members',
       description: 'Collaborate with your team on content creation',
       icon: Users,
       component: InviteTeamStep,
-      isCompleted: false,
       isOptional: true,
     },
     {
-      id: 'analytics-setup',
+      id: 'analytics_setup',
       title: 'Set Up Analytics',
       description: 'Track your content performance and engagement',
       icon: BarChart3,
       component: AnalyticsSetupStep,
-      isCompleted: false,
       isOptional: true,
     },
   ];
 
-  const currentStepData = steps[currentStep];
-  const progress = ((currentStep + 1) / steps.length) * 100;
-
+  // Use progress from API if available
   useEffect(() => {
-    // Load user's onboarding progress
-    loadOnboardingProgress();
-  }, []);
-
-  const loadOnboardingProgress = async () => {
-    try {
-      const response = await api.get('/user/onboarding-progress');
-      if (response.data.completed_steps) {
-        setCompletedSteps(new Set(response.data.completed_steps));
-      }
-    } catch (error) {
-      console.error('Failed to load onboarding progress:', error);
+    if (progress) {
+      setCurrentStep(progress.current_step);
     }
-  };
+  }, [progress]);
 
-  const markStepCompleted = async (stepId: string) => {
-    try {
-      await api.post('/user/onboarding-progress', {
-        step_id: stepId,
-        completed: true,
-      });
-      
-      setCompletedSteps(prev => new Set([...prev, stepId]));
-    } catch (error) {
-      console.error('Failed to save onboarding progress:', error);
-    }
-  };
+  const currentStepData = stepComponents[currentStep];
+  const progressPercentage = ((currentStep + 1) / stepComponents.length) * 100;
+  const completedSteps = progress?.completed_steps || [];
+  const steps = progress?.steps || [];
 
   const handleNext = () => {
-    if (currentStep < steps.length - 1) {
+    if (currentStep < stepComponents.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      handleComplete();
+      onComplete();
     }
   };
 
@@ -157,21 +145,13 @@ export function OnboardingFlow({ isOpen, onClose, onComplete }: OnboardingFlowPr
     }
   };
 
-  const handleComplete = async () => {
+  const handleStepComplete = async (stepId: string, data?: Record<string, any>) => {
     try {
-      setIsLoading(true);
-      await api.post('/user/onboarding-complete');
-      onComplete();
+      await completeStep(stepId, data);
+      handleNext();
     } catch (error) {
-      console.error('Failed to complete onboarding:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to complete step:', error);
     }
-  };
-
-  const handleStepComplete = (stepId: string) => {
-    markStepCompleted(stepId);
-    handleNext();
   };
 
   if (!isOpen) return null;
@@ -204,13 +184,13 @@ export function OnboardingFlow({ isOpen, onClose, onComplete }: OnboardingFlowPr
               Getting Started
             </h2>
             <span className="text-sm text-gray-500">
-              Step {currentStep + 1} of {steps.length}
+              Step {currentStep + 1} of {stepComponents.length}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
+              style={{ width: `${progressPercentage}%` }}
             />
           </div>
         </div>
@@ -218,14 +198,15 @@ export function OnboardingFlow({ isOpen, onClose, onComplete }: OnboardingFlowPr
         {/* Step navigation */}
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center space-x-2">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
+            {stepComponents.map((stepComponent, index) => {
+              const Icon = stepComponent.icon;
               const isActive = index === currentStep;
-              const isCompleted = completedSteps.has(step.id);
+              const step = steps.find(s => s.id === stepComponent.id);
+              const isCompleted = step?.is_completed || false;
               const isPast = index < currentStep;
               
               return (
-                <div key={step.id} className="flex items-center">
+                <div key={stepComponent.id} className="flex items-center">
                   <div
                     className={`
                       flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all
@@ -243,7 +224,7 @@ export function OnboardingFlow({ isOpen, onClose, onComplete }: OnboardingFlowPr
                       <Icon className="h-5 w-5" />
                     )}
                   </div>
-                  {index < steps.length - 1 && (
+                  {index < stepComponents.length - 1 && (
                     <div
                       className={`
                         w-8 h-0.5 mx-2 transition-all
@@ -276,9 +257,10 @@ export function OnboardingFlow({ isOpen, onClose, onComplete }: OnboardingFlowPr
           {/* Step component */}
           <div className="min-h-[300px]">
             <currentStepData.component
-              onComplete={() => handleStepComplete(currentStepData.id)}
+              onComplete={(data?: Record<string, any>) => handleStepComplete(currentStepData.id, data)}
               onSkip={handleSkipStep}
-              isCompleted={completedSteps.has(currentStepData.id)}
+              isCompleted={steps.find(s => s.id === currentStepData.id)?.is_completed || false}
+              isLoading={isCompletingStep}
             />
           </div>
         </div>
@@ -306,16 +288,16 @@ export function OnboardingFlow({ isOpen, onClose, onComplete }: OnboardingFlowPr
             
             <Button
               onClick={handleNext}
-              disabled={isLoading}
+              disabled={isCompletingStep}
               rightIcon={
-                currentStep === steps.length - 1 ? (
+                currentStep === stepComponents.length - 1 ? (
                   <Check className="h-4 w-4" />
                 ) : (
                   <ArrowRight className="h-4 w-4" />
                 )
               }
             >
-              {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
+              {currentStep === stepComponents.length - 1 ? 'Complete' : 'Next'}
             </Button>
           </div>
         </div>
@@ -388,7 +370,14 @@ export function OnboardingFlow({ isOpen, onClose, onComplete }: OnboardingFlowPr
 }
 
 // Individual step components
-function WelcomeStep({ onComplete }: { onComplete: () => void }) {
+interface StepProps {
+  onComplete: (data?: Record<string, any>) => void;
+  onSkip?: () => void;
+  isCompleted: boolean;
+  isLoading?: boolean;
+}
+
+function WelcomeStep({ onComplete, isLoading }: StepProps) {
   const { user } = useAuth();
 
   return (
@@ -399,7 +388,7 @@ function WelcomeStep({ onComplete }: { onComplete: () => void }) {
       
       <div>
         <h4 className="text-lg font-semibold text-gray-900 mb-2">
-          Welcome, {user?.name}! 👋
+          Welcome, {user?.name || user?.email}! 👋
         </h4>
         <p className="text-gray-600 max-w-md mx-auto">
           StorySlip helps you manage and display your content beautifully across any website. 
@@ -410,6 +399,8 @@ function WelcomeStep({ onComplete }: { onComplete: () => void }) {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h5 className="font-medium text-blue-900 mb-2">What you'll accomplish:</h5>
         <ul className="text-sm text-blue-800 space-y-1">
+          <li>• Complete your profile</li>
+          <li>• Set up your organization</li>
           <li>• Create your first website</li>
           <li>• Add and publish content</li>
           <li>• Customize your content widget</li>
@@ -417,34 +408,207 @@ function WelcomeStep({ onComplete }: { onComplete: () => void }) {
         </ul>
       </div>
 
-      <Button onClick={onComplete} size="lg" className="w-full">
-        Let's Get Started
+      <Button 
+        onClick={() => onComplete({ welcomed: true })} 
+        size="lg" 
+        className="w-full"
+        disabled={isLoading}
+      >
+        {isLoading ? 'Getting Started...' : 'Let\'s Get Started'}
         <ArrowRight className="h-4 w-4 ml-2" />
       </Button>
     </div>
   );
 }
 
-function CreateWebsiteStep({ onComplete }: { onComplete: () => void }) {
+function ProfileSetupStep({ onComplete, isLoading }: StepProps) {
+  const { user } = useAuth();
+  const [name, setName] = useState(user?.name || '');
+  const [bio, setBio] = useState('');
+  const [company, setCompany] = useState('');
+
+  const handleComplete = async () => {
+    if (!name.trim()) return;
+
+    try {
+      // Update user profile
+      await api.put('/profile', {
+        name: name.trim(),
+        bio: bio.trim(),
+        company: company.trim(),
+      });
+
+      onComplete({
+        name: name.trim(),
+        bio: bio.trim(),
+        company: company.trim(),
+      });
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <User className="h-8 w-8 text-purple-600" />
+        </div>
+        <p className="text-gray-600">
+          Complete your profile to personalize your experience
+        </p>
+      </div>
+
+      <Card>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Full Name *
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your full name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Bio (Optional)
+            </label>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Tell us a bit about yourself..."
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Company (Optional)
+            </label>
+            <input
+              type="text"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              placeholder="Your company name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <Button
+            onClick={handleComplete}
+            disabled={!name.trim() || isLoading}
+            className="w-full"
+          >
+            {isLoading ? 'Saving Profile...' : 'Save Profile'}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function OrganizationSetupStep({ onComplete, isLoading }: StepProps) {
+  const [orgName, setOrgName] = useState('');
+  const [orgDescription, setOrgDescription] = useState('');
+
+  const handleComplete = async () => {
+    if (!orgName.trim()) return;
+
+    try {
+      // Create organization
+      await api.post('/organizations', {
+        name: orgName.trim(),
+        description: orgDescription.trim(),
+      });
+
+      onComplete({
+        name: orgName.trim(),
+        description: orgDescription.trim(),
+      });
+    } catch (error) {
+      console.error('Failed to create organization:', error);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Users className="h-8 w-8 text-indigo-600" />
+        </div>
+        <p className="text-gray-600">
+          Set up your organization to manage team access and branding
+        </p>
+      </div>
+
+      <Card>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Organization Name *
+            </label>
+            <input
+              type="text"
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+              placeholder="My Company"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description (Optional)
+            </label>
+            <textarea
+              value={orgDescription}
+              onChange={(e) => setOrgDescription(e.target.value)}
+              placeholder="Brief description of your organization..."
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <Button
+            onClick={handleComplete}
+            disabled={!orgName.trim() || isLoading}
+            className="w-full"
+          >
+            {isLoading ? 'Creating Organization...' : 'Create Organization'}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function CreateWebsiteStep({ onComplete, isLoading }: StepProps) {
   const [websiteName, setWebsiteName] = useState('');
   const [websiteDomain, setWebsiteDomain] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleCreateWebsite = async () => {
     if (!websiteName.trim() || !websiteDomain.trim()) return;
 
     try {
-      setIsLoading(true);
-      await api.post('/websites', {
-        name: websiteName,
-        domain: websiteDomain,
+      const response = await api.post('/websites', {
+        name: websiteName.trim(),
+        domain: websiteDomain.trim(),
         description: 'Created during onboarding',
       });
-      onComplete();
+
+      onComplete({
+        website_id: response.data.id,
+        name: websiteName.trim(),
+        domain: websiteDomain.trim(),
+      });
     } catch (error) {
       console.error('Failed to create website:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -463,7 +627,7 @@ function CreateWebsiteStep({ onComplete }: { onComplete: () => void }) {
         <CardContent className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Website Name
+              Website Name *
             </label>
             <input
               type="text"
@@ -476,7 +640,7 @@ function CreateWebsiteStep({ onComplete }: { onComplete: () => void }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Website Domain
+              Website Domain *
             </label>
             <input
               type="text"
@@ -495,7 +659,7 @@ function CreateWebsiteStep({ onComplete }: { onComplete: () => void }) {
             disabled={!websiteName.trim() || !websiteDomain.trim() || isLoading}
             className="w-full"
           >
-            {isLoading ? 'Creating...' : 'Create Website'}
+            {isLoading ? 'Creating Website...' : 'Create Website'}
           </Button>
         </CardContent>
       </Card>
@@ -503,31 +667,37 @@ function CreateWebsiteStep({ onComplete }: { onComplete: () => void }) {
   );
 }
 
-function AddContentStep({ onComplete }: { onComplete: () => void }) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+function AddContentStep({ onComplete, isLoading }: StepProps) {
+  const [title, setTitle] = useState('Welcome to My Blog');
+  const [content, setContent] = useState('This is my first article created with StorySlip! I\'m excited to start sharing my thoughts and ideas with the world.');
 
   const handleCreateContent = async () => {
     if (!title.trim() || !content.trim()) return;
 
     try {
-      setIsLoading(true);
       // Get the first website (created in previous step)
       const websitesResponse = await api.get('/websites');
-      const website = websitesResponse.data[0];
+      const website = websitesResponse.data.data?.[0];
 
-      await api.post(`/websites/${website.id}/content`, {
-        title,
-        content: `<p>${content}</p>`,
+      if (!website) {
+        console.error('No website found');
+        return;
+      }
+
+      const response = await api.post(`/websites/${website.id}/content`, {
+        title: title.trim(),
+        content: `<p>${content.trim()}</p>`,
         status: 'published',
-        excerpt: content.substring(0, 150),
+        excerpt: content.trim().substring(0, 150),
       });
-      onComplete();
+
+      onComplete({
+        content_id: response.data.id,
+        title: title.trim(),
+        website_id: website.id,
+      });
     } catch (error) {
       console.error('Failed to create content:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -546,7 +716,7 @@ function AddContentStep({ onComplete }: { onComplete: () => void }) {
         <CardContent className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Article Title
+              Article Title *
             </label>
             <input
               type="text"
@@ -559,7 +729,7 @@ function AddContentStep({ onComplete }: { onComplete: () => void }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Content
+              Content *
             </label>
             <textarea
               value={content}
@@ -575,7 +745,7 @@ function AddContentStep({ onComplete }: { onComplete: () => void }) {
             disabled={!title.trim() || !content.trim() || isLoading}
             className="w-full"
           >
-            {isLoading ? 'Publishing...' : 'Publish Article'}
+            {isLoading ? 'Publishing Article...' : 'Publish Article'}
           </Button>
         </CardContent>
       </Card>
@@ -583,26 +753,31 @@ function AddContentStep({ onComplete }: { onComplete: () => void }) {
   );
 }
 
-function CustomizeWidgetStep({ onComplete, onSkip }: { onComplete: () => void; onSkip: () => void }) {
+function CustomizeWidgetStep({ onComplete, onSkip, isLoading }: StepProps) {
   const [primaryColor, setPrimaryColor] = useState('#3B82F6');
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleCustomizeWidget = async () => {
     try {
-      setIsLoading(true);
       // Get the first website
       const websitesResponse = await api.get('/websites');
-      const website = websitesResponse.data[0];
+      const website = websitesResponse.data.data?.[0];
+
+      if (!website) {
+        console.error('No website found');
+        return;
+      }
 
       await api.put(`/websites/${website.id}/branding`, {
         primary_color: primaryColor,
         brand_name: website.name,
       });
-      onComplete();
+
+      onComplete({
+        primary_color: primaryColor,
+        website_id: website.id,
+      });
     } catch (error) {
       console.error('Failed to customize widget:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -657,6 +832,7 @@ function CustomizeWidgetStep({ onComplete, onSkip }: { onComplete: () => void; o
               variant="outline"
               onClick={onSkip}
               className="flex-1"
+              disabled={isLoading}
             >
               Skip for Now
             </Button>
@@ -665,7 +841,7 @@ function CustomizeWidgetStep({ onComplete, onSkip }: { onComplete: () => void; o
               disabled={isLoading}
               className="flex-1"
             >
-              {isLoading ? 'Saving...' : 'Apply Customization'}
+              {isLoading ? 'Saving Customization...' : 'Apply Customization'}
             </Button>
           </div>
         </CardContent>
@@ -674,29 +850,34 @@ function CustomizeWidgetStep({ onComplete, onSkip }: { onComplete: () => void; o
   );
 }
 
-function InviteTeamStep({ onComplete, onSkip }: { onComplete: () => void; onSkip: () => void }) {
+function InviteTeamStep({ onComplete, onSkip, isLoading }: StepProps) {
   const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleInviteTeam = async () => {
     if (!email.trim()) return;
 
     try {
-      setIsLoading(true);
       // Get the first website
       const websitesResponse = await api.get('/websites');
-      const website = websitesResponse.data[0];
+      const website = websitesResponse.data.data?.[0];
+
+      if (!website) {
+        console.error('No website found');
+        return;
+      }
 
       await api.post(`/websites/${website.id}/team/invite`, {
-        email,
+        email: email.trim(),
         role: 'editor',
         message: 'Welcome to our team!',
       });
-      onComplete();
+
+      onComplete({
+        invited_email: email.trim(),
+        website_id: website.id,
+      });
     } catch (error) {
       console.error('Failed to invite team member:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -734,6 +915,7 @@ function InviteTeamStep({ onComplete, onSkip }: { onComplete: () => void; onSkip
               variant="outline"
               onClick={onSkip}
               className="flex-1"
+              disabled={isLoading}
             >
               Skip for Now
             </Button>
@@ -742,7 +924,7 @@ function InviteTeamStep({ onComplete, onSkip }: { onComplete: () => void; onSkip
               disabled={!email.trim() || isLoading}
               className="flex-1"
             >
-              {isLoading ? 'Sending...' : 'Send Invitation'}
+              {isLoading ? 'Sending Invitation...' : 'Send Invitation'}
             </Button>
           </div>
         </CardContent>
@@ -751,7 +933,14 @@ function InviteTeamStep({ onComplete, onSkip }: { onComplete: () => void; onSkip
   );
 }
 
-function AnalyticsSetupStep({ onComplete, onSkip }: { onComplete: () => void; onSkip: () => void }) {
+function AnalyticsSetupStep({ onComplete, onSkip, isLoading }: StepProps) {
+  const handleComplete = () => {
+    onComplete({
+      analytics_enabled: true,
+      setup_completed: true,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -790,14 +979,16 @@ function AnalyticsSetupStep({ onComplete, onSkip }: { onComplete: () => void; on
               variant="outline"
               onClick={onSkip}
               className="flex-1"
+              disabled={isLoading}
             >
               Skip for Now
             </Button>
             <Button
-              onClick={onComplete}
+              onClick={handleComplete}
               className="flex-1"
+              disabled={isLoading}
             >
-              View Analytics
+              {isLoading ? 'Setting up Analytics...' : 'Complete Setup'}
             </Button>
           </div>
         </CardContent>

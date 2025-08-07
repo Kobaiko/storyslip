@@ -4,11 +4,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
-import { Logo } from '../../components/ui/Logo';
+import { SplitScreenAuthLayout } from '../../components/auth/SplitScreenAuthLayout';
+import { ProductPreview } from '../../components/auth/ProductPreview';
+import { AuthPanel } from '../../components/auth/AuthPanel';
 import { urls } from '../../config/app';
 
 const loginSchema = z.object({
@@ -50,10 +51,13 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <SplitScreenAuthLayout preview={<ProductPreview />}>
+      <AuthPanel 
+        title="Welcome back"
+        subtitle="Sign in to your StorySlip account"
+      >
         {/* Back to marketing link */}
-        <div className="text-center">
+        <div className="mb-6">
           <a
             href={urls.marketing}
             className="inline-flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
@@ -63,109 +67,93 @@ const LoginPage: React.FC = () => {
           </a>
         </div>
 
-        {/* Logo and title */}
-        <div className="text-center">
-          <div className="mx-auto">
-            <Logo size="xl" />
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            {error}
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Sign in to StorySlip
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Manage your embeddable content
-          </p>
-        </div>
+        )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome back</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your dashboard
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Login Credentials */}
+          <div className="space-y-4">
+            <Input
+              label="Email address"
+              type="email"
+              autoComplete="email"
+              size="md"
+              placeholder="Enter your email address"
+              {...register('email')}
+              error={errors.email?.message}
+            />
 
-              <Input
-                label="Email address"
-                type="email"
-                autoComplete="email"
-                fullWidth
-                {...register('email')}
-                error={errors.email?.message}
+            <Input
+              label="Password"
+              type="password"
+              autoComplete="current-password"
+              size="md"
+              placeholder="Enter your password"
+              {...register('password')}
+              error={errors.password?.message}
+            />
+          </div>
+
+          {/* Remember Me & Forgot Password */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-
-              <Input
-                label="Password"
-                type="password"
-                autoComplete="current-password"
-                fullWidth
-                {...register('password')}
-                error={errors.password?.message}
-              />
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                    Remember me
-                  </label>
-                </div>
-
-                <div className="text-sm">
-                  <Link
-                    to="/forgot-password"
-                    className="font-medium text-blue-600 hover:text-blue-500"
-                  >
-                    Forgot your password?
-                  </Link>
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                fullWidth
-                loading={isLoading}
-                disabled={isLoading}
-              >
-                Sign in
-              </Button>
-            </form>
-
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">New to StorySlip?</span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <Link
-                  to="/register"
-                  className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Create an account
-                </Link>
-              </div>
+              <label htmlFor="remember-me" className="text-sm text-gray-700">
+                Remember me
+              </label>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+
+            <Link
+              to="/forgot-password"
+              className="text-sm font-medium text-blue-600 hover:text-blue-500"
+            >
+              Forgot your password?
+            </Link>
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            fullWidth
+            size="lg"
+            loading={isLoading}
+            disabled={isLoading}
+          >
+            Sign in
+          </Button>
+        </form>
+
+        {/* Create Account Link */}
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">New to StorySlip?</span>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <Link
+              to="/register"
+              className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              Create an account
+            </Link>
+          </div>
+        </div>
+      </AuthPanel>
+    </SplitScreenAuthLayout>
   );
 };
 

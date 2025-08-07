@@ -124,7 +124,7 @@ interface ConfirmModalProps {
   message: string | React.ReactNode;
   confirmText?: string;
   cancelText?: string;
-  confirmVariant?: 'danger' | 'warning' | 'info';
+  confirmVariant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'default' | 'destructive' | 'warning' | 'info';
   type?: 'danger' | 'warning' | 'info';
   loading?: boolean;
   requiresTextConfirmation?: boolean;
@@ -149,7 +149,7 @@ export function ConfirmModal({
     onConfirm();
   };
 
-  const variant = confirmVariant || (type === 'danger' ? 'destructive' : 'primary');
+  const variant = confirmVariant || (type === 'danger' ? 'danger' : type === 'warning' ? 'warning' : type === 'info' ? 'info' : 'primary');
 
   return (
     <Modal

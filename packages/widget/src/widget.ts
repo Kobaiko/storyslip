@@ -315,8 +315,9 @@ class StorySlipWidget {
       console.error('StorySlip: Failed to load content', error);
       this.renderError();
     }
-  }  /
-**
+  }
+
+  /**
    * Render content in widget
    */
   private renderContent(content: ContentItem[]): void {

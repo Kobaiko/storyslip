@@ -2,6 +2,33 @@ import { supabase, supabaseAdmin } from '../config/supabase';
 import { DatabaseResult, PaginationParams } from '../types/database';
 
 export class DatabaseService {
+  private static instance: DatabaseService;
+
+  static getInstance(): DatabaseService {
+    if (!DatabaseService.instance) {
+      DatabaseService.instance = new DatabaseService();
+    }
+    return DatabaseService.instance;
+  }
+
+  async query(sql: string, params?: any[]): Promise<{ rows: any[] }> {
+    try {
+      // For testing purposes, we'll use Supabase RPC to execute raw SQL
+      const { data, error } = await supabaseAdmin.rpc('execute_sql', {
+        sql_query: sql,
+        query_params: params || []
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return { rows: data || [] };
+    } catch (error) {
+      console.error('Database query error:', error);
+      throw error;
+    }
+  }
   /**
    * Execute a query with pagination
    */
@@ -157,6 +184,67 @@ export class DatabaseService {
       await supabaseAdmin.from('analytics_events').insert(event);
     } catch (error) {
       console.error('Failed to track analytics event:', error);
+    }
+  }
+
+  /**
+   * Get current user profile with organization info
+   */
+  static async getCurrentUserProfile(userId: string): Promise<DatabaseResult<any>> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select(`
+          *,
+          user_profiles(*),
+          organizations!current_organization_id(*)
+        `)
+        .eq('auth_user_id', userId)
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('Get current user profile error:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get user websites
+   */
+  static async getUserWebsites(userId: string): Promise<DatabaseResult<any>> {
+    try {
+      const { data, error } = await supabase.rpc('get_user_websites');
+      return { data, error };
+    } catch (error) {
+      console.error('Get user websites error:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get user organizations
+   */
+  static async getUserOrganizations(userId: string): Promise<DatabaseResult<any>> {
+    try {
+      const { data, error } = await supabase.rpc('get_user_organizations', { user_uuid: userId });
+      return { data, error };
+    } catch (error) {
+      console.error('Get user organizations error:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Switch user organization
+   */
+  static async switchUserOrganization(userId: string, organizationId: string): Promise<DatabaseResult<any>> {
+    try {
+      const { data, error } = await supabase.rpc('switch_organization', { org_id: organizationId });
+      return { data, error };
+    } catch (error) {
+      console.error('Switch user organization error:', error);
+      return { data: null, error };
     }
   }
 }

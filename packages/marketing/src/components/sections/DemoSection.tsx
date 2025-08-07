@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { MultiTabCodeDemo } from '@/components/ui/CodeDemo';
 import { WidgetPreview } from '@/components/ui/WidgetPreview';
+import { IframeBlogViewer } from '@/components/ui/IframeBlogViewer';
 import { urls } from '@/config/app';
 
 const demoTabs = [
@@ -221,6 +222,8 @@ export function DemoSection() {
   const [activeDevice, setActiveDevice] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeTab, setActiveTab] = useState('preview');
+  const [showIframe, setShowIframe] = useState(false);
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
 
   const handleDeviceChange = (index: number) => {
     setActiveDevice(index);
@@ -228,6 +231,27 @@ export function DemoSection() {
 
   const togglePlayback = () => {
     setIsPlaying(!isPlaying);
+  };
+
+  const handleOpenIframe = (slug: string, theme: string) => {
+    const blogPostUrls: Record<string, string> = {
+      'getting-started-with-storyslip': '/api/blog-iframe/getting-started-with-storyslip',
+      'advanced-widget-customization': '/api/blog-iframe/advanced-widget-customization',
+      'performance-optimization-tips': '/api/blog-iframe/performance-optimization-tips'
+    };
+    
+    const url = blogPostUrls[slug];
+    if (url) {
+      // Add theme parameter to the URL
+      const urlWithTheme = `${url}?theme=${theme}`;
+      setIframeUrl(urlWithTheme);
+      setShowIframe(true);
+    }
+  };
+
+  const handleCloseIframe = () => {
+    setShowIframe(false);
+    setIframeUrl(null);
   };
 
   return (
@@ -373,7 +397,7 @@ export function DemoSection() {
                     }}
                     className="bg-white dark:bg-secondary-900 rounded-lg shadow-lg overflow-hidden"
                   >
-                    <WidgetPreview />
+                    <WidgetPreview onPostClick={handleOpenIframe} />
                   </motion.div>
                 </div>
               </div>
@@ -479,6 +503,14 @@ export function DemoSection() {
             </div>
           </div>
         </motion.div>
+
+        {/* Iframe Blog Viewer */}
+        <IframeBlogViewer
+          isOpen={showIframe}
+          blogUrl={iframeUrl}
+          onClose={handleCloseIframe}
+          deviceWidth={deviceSizes[activeDevice].width}
+        />
       </div>
     </section>
   );

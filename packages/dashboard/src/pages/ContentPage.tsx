@@ -5,7 +5,8 @@ import { Button } from '../components/ui/Button';
 import { Modal, useModal } from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
 import { ContentList } from '../components/content/ContentList';
-import { ContentForm } from '../components/content/ContentForm';
+import { EnhancedContentForm } from '../components/content/EnhancedContentForm';
+import { ContentPublishingWorkflow } from '../components/content/ContentPublishingWorkflow';
 import { 
   useContent, 
   useCreateContent, 
@@ -132,7 +133,7 @@ const ContentPage: React.FC = () => {
           </Button>
         </div>
         
-        <ContentForm
+        <EnhancedContentForm
           websiteId={MOCK_WEBSITE_ID}
           onSubmit={handleCreateContent}
           onSaveDraft={handleCreateContent}
@@ -163,18 +164,41 @@ const ContentPage: React.FC = () => {
           </Button>
         </div>
         
-        <ContentForm
-          content={selectedContent}
-          websiteId={MOCK_WEBSITE_ID}
-          onSubmit={handleUpdateContent}
-          onSaveDraft={handleUpdateContent}
-          onPreview={(data) => console.log('Preview:', data)}
-          loading={updateContentMutation.isPending}
-          mode="edit"
-          categories={mockCategories}
-          tags={mockTags}
-          onImageUpload={handleImageUpload}
-        />
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2">
+            <EnhancedContentForm
+              content={selectedContent}
+              websiteId={MOCK_WEBSITE_ID}
+              onSubmit={handleUpdateContent}
+              onSaveDraft={handleUpdateContent}
+              onPreview={(data) => console.log('Preview:', data)}
+              loading={updateContentMutation.isPending}
+              mode="edit"
+              categories={mockCategories}
+              tags={mockTags}
+              onImageUpload={handleImageUpload}
+            />
+          </div>
+          
+          <div className="xl:col-span-1">
+            <ContentPublishingWorkflow
+              content={selectedContent}
+              onPublish={async (options) => {
+                await handlePublishContent(selectedContent.id);
+              }}
+              onSchedule={async (options) => {
+                // Handle scheduling with options
+                console.log('Schedule options:', options);
+              }}
+              onSubmitForReview={async (options) => {
+                // Handle review submission
+                console.log('Review options:', options);
+              }}
+              onPreview={() => handlePreviewContent(selectedContent)}
+              loading={publishContentMutation.isPending || unpublishContentMutation.isPending}
+            />
+          </div>
+        </div>
       </div>
     );
   }

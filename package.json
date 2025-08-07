@@ -12,6 +12,7 @@
     "dev:dashboard": "npm run dev --workspace=@storyslip/dashboard",
     "dev:widget": "npm run dev --workspace=@storyslip/widget",
     "build": "npm run build --workspaces",
+    "build:production": "npm run build:production --workspaces",
     "test": "npm run test --workspaces",
     "lint": "eslint packages/*/src --ext .ts,.tsx",
     "lint:fix": "eslint packages/*/src --ext .ts,.tsx --fix",

@@ -94,9 +94,25 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Welcome back! Here's what's happening with your content.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Welcome back! Here's what's happening with your content.</p>
+        </div>
+        
+        {/* Development: Onboarding trigger button */}
+        {process.env.NODE_ENV === 'development' && (
+          <button
+            onClick={() => {
+              // Trigger onboarding by clearing localStorage flag
+              localStorage.removeItem('onboarding-completed');
+              window.location.reload();
+            }}
+            className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+          >
+            Reset Onboarding
+          </button>
+        )}
       </div>
 
       {/* Stats Grid */}

@@ -13,16 +13,15 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { formatNumber } from '../../lib/utils';
 
 interface RealTimeData {
   active_users: number;
-  page_views_last_30min: number;
+  page_views_last_minute: number;
+  page_views_last_hour: number;
   top_pages: Array<{
     path: string;
     title: string;
     active_users: number;
-    views_last_30min: number;
   }>;
   traffic_sources: Array<{
     source: string;
@@ -36,406 +35,37 @@ interface RealTimeData {
   };
   countries: Array<{
     country: string;
-    country_code: string;
     active_users: number;
   }>;
-  events_last_5min: Array<{
-    timestamp: string;
-    type: 'page_view' | 'click' | 'scroll' | 'download';
+  events: Array<{
+    id: string;
+    type: 'page_view' | 'click' | 'scroll';
     page: string;
-    user_agent?: string;
+    timestamp: string;
     country?: string;
   }>;
 }
 
 interface RealTimeStatsProps {
-  websiteId: string;
+  websiteId?: string;
   refreshInterval?: number;
 }
 
 export function RealTimeStats({ 
-  websiteId, 
-  refreshInterval = 30000 // 30 seconds
+  websiteId = 'default', 
+  refreshInterval = 30000 
 }: RealTimeStatsProps) {
   const [data, setData] = useState<RealTimeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  // Mock data for demonstration
   const mockData: RealTimeData = {
-    active_users: 47,
-    page_views_last_30min: 156,
+    active_users: Math.floor(Math.random() * 50) + 20,
+    page_views_last_minute: Math.floor(Math.random() * 10) + 5,
+    page_views_last_hour: Math.floor(Math.random() * 200) + 100,
     top_pages: [
-      {
-        path: '/blog/react-hooks-guide',
-        title: 'Complete Guide to React Hooks',
-        active_users: 12,
-        views_last_30min: 23,
-      },
-      {
-        path: '/tutorials/javascript-basics',
-        title: 'JavaScript Fundamentals',
-        active_users: 8,
-        views_last_30min: 18,
-      },
-      {
-        path: '/about',
-        title: 'About Us',
-        active_users: 5,
-        views_last_30min: 12,
-      },
-    ],
-    traffic_sources: [
-      { source: 'Direct', active_users: 18, percentage: 38.3 },
-      { source: 'Google', active_users: 15, percentage: 31.9 },
-      { source: 'Social', active_users: 9, percentage: 19.1 },
-      { source: 'Referral', active_users: 5, percentage: 10.6 },
-    ],
-    devices: {
-      desktop: 28,
-      mobile: 15,
-      tablet: 4,
-    },
-    countries: [
-      { country: 'United States', country_code: 'US', active_users: 18 },
-      { country: 'United Kingdom', country_code: 'GB', active_users: 8 },
-      { country: 'Canada', country_code: 'CA', active_users: 6 },
-      { country: 'Germany', country_code: 'DE', active_users: 5 },
-    ],
-    events_last_5min: [
-      {
-        timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
-        type: 'page_view' as const,
-        page: '/blog/react-hooks-guide',
-        country: 'US',
-      },
-      {
-        timestamp: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
-        type: 'click' as const,
-        page: '/tutorials/javascript-basics',
-        country: 'GB',
-      },
-      {
-        timestamp: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
-        type: 'download' as const,
-        page: '/resources/guide.pdf',
-        country: 'CA',
-      },
-    ],
-  };
-
-  const fetchRealTimeData = async () => {
-    setLoading(true);
-    try {
-      // In a real app, this would be an API call
-      // const response = await fetch(`/api/analytics/realtime/${websiteId}`);
-      // const data = await response.json();
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Add some randomness to mock data for demonstration
-      const randomizedData = {
-        ...mockData,
-        active_users: mockData.active_users + Math.floor(Math.random() * 10) - 5,
-        page_views_last_30min: mockData.page_views_last_30min + Math.floor(Math.random() * 20) - 10,
-      };
-      
-      setData(randomizedData);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error('Failed to fetch real-time data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRealTimeData();
-  }, [websiteId]);
-
-  useEffect(() => {
-    if (!autoRefresh) return;
-
-    const interval = setInterval(fetchRealTimeData, refreshInterval);
-    return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval]);
-
-  const getDeviceIcon = (device: string) => {
-    switch (device.toLowerCase()) {
-      case 'desktop': return Monitor;
-      case 'mobile': return Smartphone;
-      case 'tablet': return Tablet;
-      default: return Monitor;
-    }
-  };
-
-  const getEventTypeColor = (type: string) => {
-    switch (type) {
-      case 'page_view': return 'bg-blue-100 text-blue-800';
-      case 'click': return 'bg-green-100 text-green-800';
-      case 'scroll': return 'bg-yellow-100 text-yellow-800';
-      case 'download': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatTimeAgo = (timestamp: string) => {
-    const now = new Date();
-    const time = new Date(timestamp);
-    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes === 1) return '1 minute ago';
-    return `${diffInMinutes} minutes ago`;
-  };
-
-  if (loading && !data) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Activity className="h-5 w-5 mr-2" />
-            Real-time Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-32">
-            <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!data) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Activity className="h-5 w-5 mr-2" />
-            Real-time Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-32 text-gray-500">
-            <div className="text-center">
-              <Activity className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-              <p className="text-sm">No real-time data available</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center">
-            <Activity className="h-5 w-5 mr-2" />
-            Real-time Activity
-            <Badge variant="secondary" className="ml-2">
-              Live
-            </Badge>
-          </CardTitle>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setAutoRefresh(!autoRefresh)}
-              className={autoRefresh ? 'text-green-600' : 'text-gray-600'}
-            >
-              <RefreshCw className={`h-4 w-4 ${autoRefresh ? 'animate-spin' : ''}`} />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={fetchRealTimeData}
-              disabled={loading}
-            >
-              Refresh
-            </Button>
-          </div>
-        </div>
-        
-        {lastUpdated && (
-          <p className="text-xs text-gray-500 mt-1">
-            Last updated: {lastUpdated.toLocaleTimeString()}
-          </p>
-        )}
-      </CardHeader>
-      
-      <CardContent>
-        <div className="space-y-6">
-          {/* Key Real-time Metrics */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="flex items-center justify-center mb-2">
-                <Users className="h-5 w-5 text-green-600" />
-              </div>
-              <div className="text-2xl font-bold text-green-900">
-                {formatNumber(data.active_users)}
-              </div>
-              <div className="text-xs text-green-700">Active Users</div>
-            </div>
-            
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="flex items-center justify-center mb-2">
-                <Eye className="h-5 w-5 text-blue-600" />
-              </div>
-              <div className="text-2xl font-bold text-blue-900">
-                {formatNumber(data.page_views_last_30min)}
-              </div>
-              <div className="text-xs text-blue-700">Views (30 min)</div>
-            </div>
-          </div>
-
-          {/* Top Active Pages */}
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Top Active Pages</h4>
-            <div className="space-y-2">
-              {data.top_pages.map((page, index) => (
-                <div key={page.path} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex items-center space-x-3 min-w-0 flex-1">
-                    <div className="flex-shrink-0 w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium">
-                      {index + 1}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-gray-900 truncate">
-                        {page.title}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate">
-                        {page.path}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-600">
-                    <span>{page.active_users} active</span>
-                    <span>{page.views_last_30min} views</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Device Breakdown */}
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Active Users by Device</h4>
-            <div className="space-y-2">
-              {Object.entries(data.devices).map(([device, count]) => {
-                const Icon = getDeviceIcon(device);
-                const percentage = (count / data.active_users) * 100;
-                
-                return (
-                  <div key={device} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Icon className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-900 capitalize">
-                        {device}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                      <span className="text-sm text-gray-600 w-8 text-right">
-                        {count}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Traffic Sources */}
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Active Traffic Sources</h4>
-            <div className="space-y-2">
-              {data.traffic_sources.map((source) => (
-                <div key={source.source} className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-900">
-                    {source.source}
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">
-                      {source.active_users} users
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      ({source.percentage.toFixed(1)}%)
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Recent Activity</h4>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {data.events_last_5min.map((event, index) => (
-                <div key={index} className="flex items-center justify-between p-2 text-sm">
-                  <div className="flex items-center space-x-3">
-                    <Badge 
-                      variant="secondary" 
-                      size="sm"
-                      className={getEventTypeColor(event.type)}
-                    >
-                      {event.type.replace('_', ' ')}
-                    </Badge>
-                    <span className="text-gray-900 truncate max-w-48">
-                      {event.page}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-xs text-gray-500">
-                    {event.country && (
-                      <span className="px-1 py-0.5 bg-gray-100 rounded text-xs">
-                        {event.country}
-                      </span>
-                    )}
-                    <span>{formatTimeAgo(event.timestamp)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Countries */}
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Top Countries</h4>
-            <div className="space-y-2">
-              {data.countries.slice(0, 5).map((country, index) => (
-                <div key={country.country_code} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-shrink-0 w-5 h-5 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center text-xs font-medium">
-                      {index + 1}
-                    </div>
-                    <span className="text-sm font-medium text-gray-900">
-                      {country.country}
-                    </span>
-                  </div>
-                  <span className="text-sm text-gray-600">
-                    {country.active_users} users
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}users: Mat
-h.floor(Math.random() * 20) + 5 },
+      { path: '/', title: 'Home', active_users: Math.floor(Math.random() * 20) + 5 },
       { path: '/blog', title: 'Blog', active_users: Math.floor(Math.random() * 15) + 3 },
       { path: '/about', title: 'About Us', active_users: Math.floor(Math.random() * 10) + 2 },
       { path: '/contact', title: 'Contact', active_users: Math.floor(Math.random() * 8) + 1 },
@@ -485,10 +115,6 @@ h.floor(Math.random() * 20) + 5 },
   const fetchRealTimeData = async () => {
     setLoading(true);
     try {
-      // In real app, this would be an API call
-      // const response = await api.get(`/analytics/realtime/${websiteId}`);
-      // setData(response.data);
-      
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
       setData(mockData);
@@ -530,6 +156,10 @@ h.floor(Math.random() * 20) + 5 },
       case 'scroll': return 'text-purple-600';
       default: return 'text-gray-600';
     }
+  };
+
+  const formatNumber = (num: number) => {
+    return num.toLocaleString();
   };
 
   const totalDeviceUsers = data ? data.devices.desktop + data.devices.mobile + data.devices.tablet : 0;
@@ -694,7 +324,7 @@ h.floor(Math.random() * 20) + 5 },
                       <div className="w-16 bg-gray-200 rounded-full h-2">
                         <div
                           className="h-2 bg-blue-600 rounded-full"
-                          style={{ width: `${(data.devices.desktop / totalDeviceUsers) * 100}%` }}
+                          style={{ width: `${totalDeviceUsers > 0 ? (data.devices.desktop / totalDeviceUsers) * 100 : 0}%` }}
                         />
                       </div>
                       <span className="text-sm font-medium text-gray-900 w-8 text-right">
@@ -712,7 +342,7 @@ h.floor(Math.random() * 20) + 5 },
                       <div className="w-16 bg-gray-200 rounded-full h-2">
                         <div
                           className="h-2 bg-green-600 rounded-full"
-                          style={{ width: `${(data.devices.mobile / totalDeviceUsers) * 100}%` }}
+                          style={{ width: `${totalDeviceUsers > 0 ? (data.devices.mobile / totalDeviceUsers) * 100 : 0}%` }}
                         />
                       </div>
                       <span className="text-sm font-medium text-gray-900 w-8 text-right">
@@ -730,7 +360,7 @@ h.floor(Math.random() * 20) + 5 },
                       <div className="w-16 bg-gray-200 rounded-full h-2">
                         <div
                           className="h-2 bg-purple-600 rounded-full"
-                          style={{ width: `${(data.devices.tablet / totalDeviceUsers) * 100}%` }}
+                          style={{ width: `${totalDeviceUsers > 0 ? (data.devices.tablet / totalDeviceUsers) * 100 : 0}%` }}
                         />
                       </div>
                       <span className="text-sm font-medium text-gray-900 w-8 text-right">
@@ -788,7 +418,7 @@ h.floor(Math.random() * 20) + 5 },
                           {event.country}
                         </Badge>
                       )}
-                      <span className="text-gray-500 ml-auto">
+                      <span className="text-xs text-gray-500 ml-auto">
                         {new Date(event.timestamp).toLocaleTimeString()}
                       </span>
                     </div>
@@ -798,14 +428,11 @@ h.floor(Math.random() * 20) + 5 },
             </div>
           </div>
         ) : (
-          <div className="text-center py-8">
-            <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No real-time data
-            </h3>
-            <p className="text-gray-500">
-              Real-time activity will appear here once you have active visitors.
-            </p>
+          <div className="flex items-center justify-center py-8 text-gray-500">
+            <div className="text-center">
+              <Activity className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+              <p className="text-sm">No real-time data available</p>
+            </div>
           </div>
         )}
       </CardContent>

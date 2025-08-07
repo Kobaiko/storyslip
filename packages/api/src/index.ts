@@ -65,6 +65,11 @@ async function startOptimizedServer() {
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+    // Session management middleware
+    const { sessionCorsMiddleware, sessionStatusMiddleware } = await import('./middleware/session');
+    app.use(sessionCorsMiddleware);
+    app.use(sessionStatusMiddleware);
+
     // API status endpoint
     app.get('/api/status', (req, res) => {
       res.json({
@@ -81,7 +86,11 @@ async function startOptimizedServer() {
 
     // Import routes
     const authRoutes = (await import('./routes/auth.routes')).default;
+    const sessionRoutes = (await import('./routes/session.routes')).default;
     const userRoutes = (await import('./routes/user.routes')).default;
+    const profileRoutes = (await import('./routes/profile.routes')).default;
+    const organizationRoutes = (await import('./routes/organization.routes')).default;
+    const onboardingRoutes = (await import('./routes/onboarding.routes')).default;
     const websiteRoutes = (await import('./routes/website.routes')).default;
     const contentRoutes = (await import('./routes/content.routes')).default;
     const categoryRoutes = (await import('./routes/category.routes')).default;
@@ -102,7 +111,11 @@ async function startOptimizedServer() {
 
     // API Routes
     app.use('/api/auth', authRoutes);
+    app.use('/api/session', sessionRoutes);
     app.use('/api/users', userRoutes);
+    app.use('/api/profile', profileRoutes);
+    app.use('/api/organizations', organizationRoutes);
+    app.use('/api/onboarding', onboardingRoutes);
     app.use('/api/websites', websiteRoutes);
     app.use('/api/websites', contentRoutes);
     app.use('/api/websites', categoryRoutes);
@@ -125,6 +138,10 @@ async function startOptimizedServer() {
     // Widget delivery routes
     app.use('/api', widgetDeliveryRoutes); // Public widget delivery routes
 
+    // Widget render routes (for public widget rendering)
+    const widgetRenderRoutes = (await import('./routes/widget-render.routes')).default;
+    app.use('/api/widgets', widgetRenderRoutes); // Public widget rendering and embed codes
+
     // Enhanced widget routes
     app.use('/api', enhancedWidgetRoutes); // Both public and private widget routes
 
@@ -140,6 +157,18 @@ async function startOptimizedServer() {
     // AI Content routes
     const aiContentRoutes = (await import('./routes/ai-content.routes')).default;
     app.use('/api/ai-content', aiContentRoutes); // AI-powered content generation
+
+    // Content Sync routes
+    const contentSyncRoutes = (await import('./routes/content-sync.routes')).default;
+    app.use('/api/content-sync', contentSyncRoutes); // Real-time content synchronization
+
+    // Widget Configuration routes
+    const widgetConfigurationRoutes = (await import('./routes/widget-configuration.routes')).default;
+    app.use('/api/widgets', widgetConfigurationRoutes); // Widget configuration and management
+
+    // Monitoring routes
+    const monitoringRoutes = (await import('./routes/monitoring.routes')).default;
+    app.use('/api/monitoring', monitoringRoutes); // Comprehensive monitoring and error tracking
 
     // 404 handler for unmatched routes (handled by integration service)
     app.use('*', (req, res) => {
@@ -182,4 +211,5 @@ startOptimizedServer().catch((error) => {
   process.exit(1);
 });
 
+export { app };
 export default app;

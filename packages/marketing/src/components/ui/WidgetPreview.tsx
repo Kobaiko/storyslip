@@ -13,6 +13,7 @@ import {
   Sparkles
 } from 'lucide-react';
 
+
 const sampleContent = [
   {
     id: 1,
@@ -23,8 +24,9 @@ const sampleContent = [
     views: 1234,
     likes: 89,
     comments: 12,
-    image: "https://images.unsplash.com/photo-1551650975-87deedd944c3?w=400&h=200&fit=crop",
-    category: "Tutorial"
+    image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=200&fit=crop&auto=format&q=80",
+    category: "Tutorial",
+    slug: "getting-started-with-storyslip"
   },
   {
     id: 2,
@@ -35,8 +37,9 @@ const sampleContent = [
     views: 892,
     likes: 67,
     comments: 8,
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop",
-    category: "Guide"
+    image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=200&fit=crop&auto=format&q=80",
+    category: "Guide",
+    slug: "advanced-widget-customization"
   },
   {
     id: 3,
@@ -47,8 +50,9 @@ const sampleContent = [
     views: 2156,
     likes: 143,
     comments: 24,
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop",
-    category: "Performance"
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop&auto=format&q=80",
+    category: "Performance",
+    slug: "performance-optimization-tips"
   }
 ];
 
@@ -74,8 +78,8 @@ const themeConfigs = {
       background: "#ffffff",
       text: "#1f2937",
       accent: "#06b6d4",
-      cardBg: "from-white to-blue-50",
-      border: "border-blue-200"
+      cardBg: "from-white via-blue-50 to-purple-50",
+      border: "border-blue-300"
     },
     typography: {
       fontFamily: "font-display",
@@ -83,58 +87,65 @@ const themeConfigs = {
       bodyWeight: "font-medium"
     },
     styling: {
-      borderRadius: "rounded-xl",
-      shadow: "shadow-lg hover:shadow-xl",
-      spacing: "p-6"
+      borderRadius: "rounded-2xl",
+      shadow: "shadow-xl hover:shadow-2xl",
+      spacing: "p-6",
+      special: "bg-gradient-to-br from-blue-500 to-purple-600"
     }
   },
   minimal: {
     name: "Minimal",
     colors: {
-      primary: "#64748b",
-      secondary: "#94a3b8",
-      background: "#f8fafc", 
-      text: "#334155",
-      accent: "#0f172a",
-      cardBg: "from-slate-50 to-white",
-      border: "border-slate-200"
+      primary: "#374151",
+      secondary: "#9ca3af",
+      background: "#ffffff", 
+      text: "#111827",
+      accent: "#6b7280",
+      cardBg: "from-gray-50 to-white",
+      border: "border-gray-300"
     },
     typography: {
-      fontFamily: "font-sans",
-      headingWeight: "font-medium",
-      bodyWeight: "font-normal"
+      fontFamily: "font-mono",
+      headingWeight: "font-light",
+      bodyWeight: "font-light"
     },
     styling: {
-      borderRadius: "rounded-lg",
-      shadow: "shadow-sm hover:shadow-md",
-      spacing: "p-8"
+      borderRadius: "rounded-none",
+      shadow: "shadow-none hover:shadow-sm",
+      spacing: "p-8",
+      special: "bg-gray-100"
     }
   },
   classic: {
     name: "Classic", 
     colors: {
-      primary: "#1e3a8a",
-      secondary: "#f59e0b",
-      background: "#fefdf8",
-      text: "#1f2937", 
-      accent: "#dc2626",
-      cardBg: "from-amber-50 to-blue-50",
-      border: "border-amber-200"
+      primary: "#92400e",
+      secondary: "#d97706",
+      background: "#fef7ed",
+      text: "#451a03", 
+      accent: "#ea580c",
+      cardBg: "from-amber-100 via-orange-50 to-yellow-50",
+      border: "border-amber-400"
     },
     typography: {
-      fontFamily: "font-lato",
-      headingWeight: "font-semibold",
+      fontFamily: "font-serif",
+      headingWeight: "font-bold",
       bodyWeight: "font-normal"
     },
     styling: {
-      borderRadius: "rounded-md",
-      shadow: "shadow-md hover:shadow-lg",
-      spacing: "p-5"
+      borderRadius: "rounded-lg",
+      shadow: "shadow-lg hover:shadow-xl",
+      spacing: "p-6",
+      special: "bg-gradient-to-r from-amber-200 to-orange-200"
     }
   }
 };
 
-export function WidgetPreview() {
+interface WidgetPreviewProps {
+  onPostClick?: (slug: string, theme: string) => void;
+}
+
+export function WidgetPreview({ onPostClick }: WidgetPreviewProps) {
   const [currentTheme, setCurrentTheme] = useState('modern');
   const [currentLayout, setCurrentLayout] = useState('grid');
   const [isLoading, setIsLoading] = useState(false);
@@ -153,6 +164,12 @@ export function WidgetPreview() {
       setCurrentLayout(layout);
       setIsLoading(false);
     }, 300);
+  };
+
+  const handlePostClick = (slug: string) => {
+    if (onPostClick) {
+      onPostClick(slug, currentTheme);
+    }
   };
 
   return (
@@ -209,16 +226,48 @@ export function WidgetPreview() {
       {/* Widget Preview */}
       <div className="relative bg-white dark:bg-secondary-800 rounded-lg shadow-2xl border border-secondary-200 dark:border-secondary-700 overflow-hidden">
         {/* Widget Header */}
-        <div className="px-6 py-4 border-b border-secondary-200 dark:border-secondary-700 bg-gradient-to-r from-primary-50 to-accent-50 dark:from-secondary-800 dark:to-secondary-700">
+        <div 
+          className={`px-6 py-4 border-b ${themeConfigs[currentTheme as keyof typeof themeConfigs].colors.border} ${themeConfigs[currentTheme as keyof typeof themeConfigs].typography.fontFamily}`}
+          style={{ 
+            background: currentTheme === 'modern' ? 'linear-gradient(135deg, #3b82f6, #8b5cf6)' :
+                       currentTheme === 'minimal' ? '#f9fafb' :
+                       'linear-gradient(135deg, #d97706, #f59e0b)'
+          }}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Sparkles className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-              <h3 className="text-lg font-semibold text-secondary-900 dark:text-white">
-                Latest Stories
+              <Sparkles 
+                className="h-5 w-5" 
+                style={{ 
+                  color: currentTheme === 'modern' ? 'white' :
+                         currentTheme === 'minimal' ? '#374151' :
+                         'white'
+                }}
+              />
+              <h3 
+                className={`text-lg ${themeConfigs[currentTheme as keyof typeof themeConfigs].typography.headingWeight}`}
+                style={{ 
+                  color: currentTheme === 'modern' ? 'white' :
+                         currentTheme === 'minimal' ? '#111827' :
+                         'white'
+                }}
+              >
+                {currentTheme === 'modern' ? 'Latest Stories' :
+                 currentTheme === 'minimal' ? 'Recent Articles' :
+                 'Featured Content'}
               </h3>
             </div>
-            <div className="text-sm text-secondary-600 dark:text-secondary-400">
-              Powered by StorySlip
+            <div 
+              className={`text-sm ${themeConfigs[currentTheme as keyof typeof themeConfigs].typography.bodyWeight}`}
+              style={{ 
+                color: currentTheme === 'modern' ? 'rgba(255,255,255,0.8)' :
+                       currentTheme === 'minimal' ? '#6b7280' :
+                       'rgba(255,255,255,0.9)'
+              }}
+            >
+              {currentTheme === 'modern' ? 'Powered by StorySlip' :
+               currentTheme === 'minimal' ? 'StorySlip' :
+               'By StorySlip'}
             </div>
           </div>
         </div>
@@ -253,7 +302,7 @@ export function WidgetPreview() {
           {currentLayout === 'grid' && (
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
               {sampleContent.slice(0, 2).map((item, index) => (
-                <ContentCard key={item.id} item={item} theme={currentTheme} index={index} />
+                <ContentCard key={item.id} item={item} theme={currentTheme} index={index} onPostClick={handlePostClick} />
               ))}
             </div>
           )}
@@ -261,7 +310,7 @@ export function WidgetPreview() {
           {currentLayout === 'list' && (
             <div className="space-y-2 sm:space-y-4">
               {sampleContent.map((item, index) => (
-                <ContentListItem key={item.id} item={item} theme={currentTheme} index={index} />
+                <ContentListItem key={item.id} item={item} theme={currentTheme} index={index} onPostClick={handlePostClick} />
               ))}
             </div>
           )}
@@ -269,52 +318,96 @@ export function WidgetPreview() {
           {currentLayout === 'cards' && (
             <div className="space-y-4 sm:space-y-6">
               {sampleContent.slice(0, 2).map((item, index) => (
-                <ContentCardLarge key={item.id} item={item} theme={currentTheme} index={index} />
+                <ContentCardLarge key={item.id} item={item} theme={currentTheme} index={index} onPostClick={handlePostClick} />
               ))}
             </div>
           )}
         </motion.div>
 
         {/* Widget Footer */}
-        <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-secondary-200 dark:border-secondary-700 bg-secondary-50 dark:bg-secondary-800">
+        <div 
+          className={`px-3 sm:px-6 py-3 sm:py-4 border-t ${themeConfigs[currentTheme as keyof typeof themeConfigs].colors.border} ${themeConfigs[currentTheme as keyof typeof themeConfigs].typography.fontFamily}`}
+          style={{ 
+            backgroundColor: currentTheme === 'modern' ? '#f8fafc' :
+                            currentTheme === 'minimal' ? '#ffffff' :
+                            '#fef7ed'
+          }}
+        >
           <div className="flex items-center justify-between">
-            <div className="text-xs sm:text-sm text-secondary-600 dark:text-secondary-400">
-              <span className="hidden sm:inline">Showing 3 of 24 stories</span>
+            <div 
+              className={`text-xs sm:text-sm ${themeConfigs[currentTheme as keyof typeof themeConfigs].typography.bodyWeight}`}
+              style={{ 
+                color: themeConfigs[currentTheme as keyof typeof themeConfigs].colors.text + '80'
+              }}
+            >
+              <span className="hidden sm:inline">
+                {currentTheme === 'modern' ? 'Showing 3 of 24 stories' :
+                 currentTheme === 'minimal' ? '3 / 24 articles' :
+                 'Displaying 3 of 24 items'}
+              </span>
               <span className="sm:hidden">3 of 24</span>
             </div>
-            <button className="flex items-center space-x-1 text-xs sm:text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200">
-              <span>View all</span>
+            <button 
+              className={`flex items-center space-x-1 text-xs sm:text-sm ${themeConfigs[currentTheme as keyof typeof themeConfigs].typography.bodyWeight} transition-colors duration-200`}
+              style={{ 
+                color: themeConfigs[currentTheme as keyof typeof themeConfigs].colors.primary
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = themeConfigs[currentTheme as keyof typeof themeConfigs].colors.accent}
+              onMouseLeave={(e) => e.currentTarget.style.color = themeConfigs[currentTheme as keyof typeof themeConfigs].colors.primary}
+            >
+              <span>
+                {currentTheme === 'modern' ? 'View all' :
+                 currentTheme === 'minimal' ? 'More' :
+                 'See more'}
+              </span>
               <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </button>
           </div>
         </div>
       </div>
+
     </div>
   );
 }
 
-function ContentCard({ item, theme, index }: { item: any; theme: string; index: number }) {
+function ContentCard({ item, theme, index, onPostClick }: { item: any; theme: string; index: number; onPostClick: (slug: string, theme: string) => void }) {
   const config = themeConfigs[theme as keyof typeof themeConfigs];
+  
+  const handleClick = () => {
+    onPostClick(item.slug, theme);
+  };
   
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
-      className={`group cursor-pointer transition-all duration-300 bg-gradient-to-br ${config.colors.cardBg} ${config.styling.borderRadius} ${config.styling.shadow} border ${config.colors.border} ${config.typography.fontFamily}`}
+      onClick={handleClick}
+      className={`group cursor-pointer transition-all duration-300 bg-gradient-to-br ${config.colors.cardBg} ${config.styling.borderRadius} ${config.styling.shadow} border ${config.colors.border} ${config.typography.fontFamily} hover:scale-105`}
       style={{ 
         backgroundColor: config.colors.background,
         borderColor: config.colors.primary + '20'
       }}
     >
-      <div className={`aspect-video bg-secondary-200 dark:bg-secondary-700 ${config.styling.borderRadius.replace('rounded-', 'rounded-t-')} overflow-hidden`}>
-        <div 
-          className="w-full h-full flex items-center justify-center"
-          style={{ 
-            background: `linear-gradient(135deg, ${config.colors.primary}, ${config.colors.accent})`
-          }}
-        >
-          <span className={`text-white ${config.typography.bodyWeight} text-sm`}>{item.category}</span>
+      <div className={`aspect-video bg-secondary-200 dark:bg-secondary-700 ${config.styling.borderRadius.replace('rounded-', 'rounded-t-')} overflow-hidden relative`}>
+        <img 
+          src={item.image} 
+          alt={item.title}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+        />
+        <div className="absolute top-2 left-2">
+          <span 
+            className={`px-2 py-1 text-xs ${config.typography.bodyWeight} ${config.styling.borderRadius.replace('rounded-', 'rounded-')} backdrop-blur-sm`}
+            style={{ 
+              backgroundColor: theme === 'modern' ? config.colors.primary + 'DD' :
+                              theme === 'minimal' ? config.colors.text + 'EE' :
+                              config.colors.secondary + 'DD',
+              color: theme === 'minimal' ? config.colors.text : 'white',
+              border: theme === 'minimal' ? `1px solid ${config.colors.primary}` : 'none'
+            }}
+          >
+            {item.category}
+          </span>
         </div>
       </div>
       <div className="p-3 sm:p-4">
@@ -351,27 +444,36 @@ function ContentCard({ item, theme, index }: { item: any; theme: string; index: 
   );
 }
 
-function ContentListItem({ item, theme, index }: { item: any; theme: string; index: number }) {
+function ContentListItem({ item, theme, index, onPostClick }: { item: any; theme: string; index: number; onPostClick: (slug: string, theme: string) => void }) {
   const config = themeConfigs[theme as keyof typeof themeConfigs];
+  
+  const handleClick = () => {
+    onPostClick(item.slug, theme);
+  };
   
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
-      className={`group cursor-pointer flex space-x-2 sm:space-x-4 transition-all duration-200 bg-gradient-to-r ${config.colors.cardBg} ${config.styling.borderRadius} ${config.styling.shadow} border p-3 sm:p-4 ${config.typography.fontFamily}`}
+      onClick={handleClick}
+      className={`group cursor-pointer flex space-x-2 sm:space-x-4 transition-all duration-200 bg-gradient-to-r ${config.colors.cardBg} ${config.styling.borderRadius} ${config.styling.shadow} border p-3 sm:p-4 ${config.typography.fontFamily} hover:scale-102`}
       style={{ 
         backgroundColor: config.colors.background,
         borderColor: config.colors.primary + '30'
       }}
     >
       <div 
-        className={`w-12 h-12 sm:w-16 sm:h-16 ${config.styling.borderRadius} flex-shrink-0 flex items-center justify-center`}
-        style={{ 
-          background: `linear-gradient(135deg, ${config.colors.primary}, ${config.colors.accent})`
-        }}
+        className={`w-12 h-12 sm:w-16 sm:h-16 ${config.styling.borderRadius} flex-shrink-0 overflow-hidden relative`}
       >
-        <span className={`text-white ${config.typography.bodyWeight} text-xs`}>{item.category}</span>
+        <img 
+          src={item.image} 
+          alt={item.title}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+        />
+        <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+          <span className={`text-white ${config.typography.bodyWeight} text-xs`}>{item.category}</span>
+        </div>
       </div>
       <div className="flex-1 min-w-0">
         <h4 className={`${config.typography.headingWeight} text-xs sm:text-sm mb-1 group-hover:transition-colors duration-200 truncate`}
@@ -399,41 +501,48 @@ function ContentListItem({ item, theme, index }: { item: any; theme: string; ind
   );
 }
 
-function ContentCardLarge({ item, theme, index }: { item: any; theme: string; index: number }) {
+function ContentCardLarge({ item, theme, index, onPostClick }: { item: any; theme: string; index: number; onPostClick: (slug: string, theme: string) => void }) {
   const config = themeConfigs[theme as keyof typeof themeConfigs];
+  
+  const handleClick = () => {
+    onPostClick(item.slug, theme);
+  };
   
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
-      className={`group cursor-pointer transition-all duration-200 bg-gradient-to-br ${config.colors.cardBg} ${config.styling.borderRadius} ${config.styling.shadow} border ${config.typography.fontFamily}`}
+      onClick={handleClick}
+      className={`group cursor-pointer transition-all duration-200 bg-gradient-to-br ${config.colors.cardBg} ${config.styling.borderRadius} ${config.styling.shadow} border ${config.typography.fontFamily} hover:scale-105`}
       style={{ 
         backgroundColor: config.colors.background,
         borderColor: config.colors.primary + '40'
       }}
     >
-      <div className={`aspect-[2/1] ${config.styling.borderRadius.replace('rounded-', 'rounded-t-')} overflow-hidden`}>
-        <div 
-          className="w-full h-full flex items-center justify-center"
-          style={{ 
-            background: `linear-gradient(135deg, ${config.colors.primary}, ${config.colors.accent})`
-          }}
-        >
-          <span className={`text-white ${config.typography.bodyWeight}`}>{item.category}</span>
-        </div>
-      </div>
-      <div className="p-4 sm:p-6">
-        <div className="flex items-center space-x-2 mb-3">
+      <div className={`aspect-[2/1] ${config.styling.borderRadius.replace('rounded-', 'rounded-t-')} overflow-hidden relative`}>
+        <img 
+          src={item.image} 
+          alt={item.title}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+        />
+        <div className="absolute top-4 left-4">
           <span 
-            className={`px-2 py-1 text-xs ${config.typography.bodyWeight} rounded`}
+            className={`px-3 py-1 text-xs ${config.typography.bodyWeight} ${config.styling.borderRadius} backdrop-blur-sm`}
             style={{ 
-              backgroundColor: config.colors.primary + '20',
-              color: config.colors.primary
+              backgroundColor: theme === 'modern' ? config.colors.primary + 'DD' :
+                              theme === 'minimal' ? config.colors.background + 'EE' :
+                              config.colors.secondary + 'DD',
+              color: theme === 'minimal' ? config.colors.text : 'white',
+              border: theme === 'minimal' ? `1px solid ${config.colors.primary}` : 'none'
             }}
           >
             {item.category}
           </span>
+        </div>
+      </div>
+      <div className="p-4 sm:p-6">
+        <div className="flex items-center space-x-2 mb-3">
           <span className={`text-xs ${config.typography.bodyWeight} hidden sm:inline`}
                 style={{ color: config.colors.text + '80' }}>
             {item.date}

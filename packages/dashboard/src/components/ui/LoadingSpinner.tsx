@@ -27,7 +27,7 @@ export function LoadingSpinner({ size = 'md', className }: LoadingSpinnerProps) 
 
 interface LoadingStateProps {
   loading: boolean;
-  error?: Error | null;
+  error?: Error | string | null;
   isEmpty?: boolean;
   children: React.ReactNode;
   loadingComponent?: React.ReactNode;
@@ -67,7 +67,7 @@ export function LoadingState({
               Something went wrong
             </h3>
             <p className="text-sm text-gray-500">
-              {error.message || 'An unexpected error occurred'}
+              {typeof error === 'string' ? error : error?.message || 'An unexpected error occurred'}
             </p>
           </div>
         )}
@@ -129,4 +129,63 @@ export function ButtonLoading({ loading, children, loadingText }: ButtonLoadingP
   }
 
   return <>{children}</>;
+}
+
+// Skeleton components for loading states
+interface SkeletonProps {
+  className?: string;
+}
+
+export function Skeleton({ className }: SkeletonProps) {
+  return (
+    <div 
+      className={cn(
+        'animate-pulse bg-gray-200 rounded',
+        className
+      )} 
+    />
+  );
+}
+
+export function CardSkeleton() {
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <div className="space-y-4">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-20 w-full" />
+        <div className="flex space-x-2">
+          <Skeleton className="h-8 w-16" />
+          <Skeleton className="h-8 w-16" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function TableSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="px-6 py-4 border-b">
+        <div className="flex space-x-4">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+      </div>
+      <div className="divide-y">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="px-6 py-4">
+            <div className="flex space-x-4">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

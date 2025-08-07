@@ -580,6 +580,7 @@ class PerformanceMonitorService extends EventEmitter {
 
 // Create singleton instance
 export const performanceMonitor = new PerformanceMonitorService();
+export { PerformanceMonitorService };
 
 // Express middleware for request tracking
 export function performanceMiddleware() {

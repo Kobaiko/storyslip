@@ -11,15 +11,21 @@ import {
   AlertCircle,
   CheckCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Settings,
+  Shield
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Form, FormField, FormActions } from '../components/ui/Form';
+import { FormContainer } from '../components/ui/FormContainer';
+import { FormFieldGroup } from '../components/ui/FormFieldGroup';
 import { LoadingState } from '../components/ui/LoadingSpinner';
 import { useToast } from '../components/ui/Toast';
 import { useCurrentUser, useUpdateProfile, useChangePassword } from '../hooks/useUsers';
+import ProfileForm from '../components/profile/ProfileForm';
+import ProfileCompletion from '../components/profile/ProfileCompletion';
 
 // Validation schemas
 const profileSchema = z.object({
@@ -148,114 +154,52 @@ const ProfilePage: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <User className="h-5 w-5 mr-2" />
+                  <Settings className="h-5 w-5 mr-2" />
                   Profile Information
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Form onSubmit={profileForm.handleSubmit(handleProfileSubmit)}>
-                  <div className="space-y-6">
-                    {/* Avatar Upload */}
-                    <div className="flex items-center space-x-6">
-                      <div className="relative">
-                        <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                          {avatarPreview || user?.avatar_url ? (
-                            <img
-                              src={avatarPreview || user?.avatar_url}
-                              alt="Profile"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User className="h-8 w-8 text-gray-400" />
-                          )}
-                        </div>
-                        <label
-                          htmlFor="avatar-upload"
-                          className="absolute bottom-0 right-0 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer hover:bg-blue-700 transition-colors"
-                        >
-                          <Camera className="h-3 w-3" />
-                        </label>
-                        <input
-                          id="avatar-upload"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarChange}
-                          className="hidden"
-                        />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-900">Profile Photo</h3>
-                        <p className="text-sm text-gray-500">
-                          Upload a photo to personalize your account
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          JPG, PNG or GIF. Max size 5MB.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Form Fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField>
-                        <Input
-                          label="Full Name"
-                          {...profileForm.register('name')}
-                          error={profileForm.formState.errors.name?.message}
-                        />
-                      </FormField>
-
-                      <FormField>
-                        <Input
-                          label="Email Address"
-                          type="email"
-                          {...profileForm.register('email')}
-                          error={profileForm.formState.errors.email?.message}
-                        />
-                      </FormField>
-                    </div>
-
-                    {/* Account Status */}
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900">Account Status</h4>
-                          <p className="text-sm text-gray-500">
-                            Your account is active and verified
-                          </p>
-                        </div>
-                        <div className="flex items-center text-green-600">
-                          <CheckCircle className="h-5 w-5 mr-1" />
-                          <span className="text-sm font-medium">Verified</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <FormActions>
-                      <Button
-                        type="submit"
-                        loading={updateProfileMutation.isPending}
-                        leftIcon={<Save className="h-4 w-4" />}
-                      >
-                        Save Changes
-                      </Button>
-                    </FormActions>
-                  </div>
-                </Form>
+                <ProfileForm onProfileUpdate={() => {
+                  // Refresh user data or show success message
+                  success('Profile updated successfully');
+                }} />
               </CardContent>
             </Card>
           </div>
 
-          {/* Account Security */}
-          <div>
+          {/* Profile Completion & Account Info */}
+          <div className="space-y-6">
+            {/* Profile Completion */}
+            <ProfileCompletion onComplete={() => {
+              success('Profile completed! All features are now available.');
+            }} />
+
+            {/* Account Security */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Lock className="h-5 w-5 mr-2" />
-                  Security
+                  <Shield className="h-5 w-5 mr-2" />
+                  Account Info
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
+                  {/* Account Status */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">Account Status</h4>
+                        <p className="text-sm text-gray-500">
+                          Your account is active and verified
+                        </p>
+                      </div>
+                      <div className="flex items-center text-green-600">
+                        <CheckCircle className="h-5 w-5 mr-1" />
+                        <span className="text-sm font-medium">Verified</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Account Info */}
                   <div className="space-y-3">
                     <div>
@@ -306,94 +250,98 @@ const ProfilePage: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)}>
-              <div className="space-y-4 max-w-md">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex">
-                    <AlertCircle className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-medium text-yellow-800">Password Requirements</h4>
-                      <ul className="text-sm text-yellow-700 mt-1 space-y-1">
-                        <li>• At least 8 characters long</li>
-                        <li>• Include uppercase and lowercase letters</li>
-                        <li>• Include at least one number</li>
-                        <li>• Include at least one special character</li>
-                      </ul>
+            <FormContainer maxWidth="md" centered={false}>
+              <Form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)}>
+                <FormFieldGroup layout="single" spacing="normal">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex">
+                      <AlertCircle className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="text-sm font-medium text-yellow-800">Password Requirements</h4>
+                        <ul className="text-sm text-yellow-700 mt-1 space-y-1">
+                          <li>• At least 8 characters long</li>
+                          <li>• Include uppercase and lowercase letters</li>
+                          <li>• Include at least one number</li>
+                          <li>• Include at least one special character</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <FormField>
-                  <div className="relative">
-                    <Input
-                      label="Current Password"
-                      type={showCurrentPassword ? 'text' : 'password'}
-                      {...passwordForm.register('current_password')}
-                      error={passwordForm.formState.errors.current_password?.message}
-                    />
-                    <button
+                  <FormField>
+                    <div className="relative">
+                      <Input
+                        label="Current Password"
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        {...passwordForm.register('current_password')}
+                        error={passwordForm.formState.errors.current_password?.message}
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      >
+                        {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </FormField>
+
+                  <FormField>
+                    <div className="relative">
+                      <Input
+                        label="New Password"
+                        type={showNewPassword ? 'text' : 'password'}
+                        {...passwordForm.register('new_password')}
+                        error={passwordForm.formState.errors.new_password?.message}
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                      >
+                        {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </FormField>
+
+                  <FormField>
+                    <div className="relative">
+                      <Input
+                        label="Confirm New Password"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        {...passwordForm.register('confirm_password')}
+                        error={passwordForm.formState.errors.confirm_password?.message}
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </FormField>
+
+                  <FormActions>
+                    <Button
                       type="button"
-                      className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      variant="outline"
+                      size="lg"
+                      onClick={() => passwordForm.reset()}
                     >
-                      {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </FormField>
-
-                <FormField>
-                  <div className="relative">
-                    <Input
-                      label="New Password"
-                      type={showNewPassword ? 'text' : 'password'}
-                      {...passwordForm.register('new_password')}
-                      error={passwordForm.formState.errors.new_password?.message}
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      size="lg"
+                      loading={changePasswordMutation.isPending}
                     >
-                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </FormField>
-
-                <FormField>
-                  <div className="relative">
-                    <Input
-                      label="Confirm New Password"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      {...passwordForm.register('confirm_password')}
-                      error={passwordForm.formState.errors.confirm_password?.message}
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </FormField>
-
-                <FormActions>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => passwordForm.reset()}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    loading={changePasswordMutation.isPending}
-                  >
-                    Update Password
-                  </Button>
-                </FormActions>
-              </div>
-            </Form>
+                      Update Password
+                    </Button>
+                  </FormActions>
+                </FormFieldGroup>
+              </Form>
+            </FormContainer>
           </CardContent>
         </Card>
       </LoadingState>
